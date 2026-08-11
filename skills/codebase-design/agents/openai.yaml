@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Design"
+  short_description: "Shape interfaces, seams, and module boundaries"
+  default_prompt: "Use $codebase-design to design the public interface and dependency seams for this module."

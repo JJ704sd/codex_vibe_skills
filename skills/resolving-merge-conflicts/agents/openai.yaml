@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resolve Merge Conflicts"
+  short_description: "Resolve conflicts without losing either intent"
+  default_prompt: "Use $resolving-merge-conflicts to resolve the current Git conflicts and validate both sides' intent."

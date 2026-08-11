@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test-Driven Development"
+  short_description: "Implement known behavior with red-green-refactor"
+  default_prompt: "Use $tdd to implement this known behavior one observable slice at a time."
