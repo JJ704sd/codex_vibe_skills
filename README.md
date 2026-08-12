@@ -18,6 +18,7 @@
 ## 设计与验证
 
 - [设计规范](docs/coding-core-skills-spec.md)
+- [开发场景编排提效规范](docs/development-orchestration-efficiency-spec.md)
 - Windows 校验：
 
   ```powershell
@@ -25,6 +26,12 @@
   ```
 
 每个技能包含最小 `SKILL.md`、桌面端 UI 元数据 `agents/openai.yaml`，以及仅在需要时加载的 `references/`。
+
+## 开发执行提效
+
+Graph、loop 和 subagent 是现有 8 个 skills 内部按场景使用的执行策略，不是第 9 个独立 skill（not a ninth skill）。复杂任务还可使用固定输入的 context capsule、安全 checkpoint、客观 evaluator gate、预算与 stuck guard；小任务保持单 agent 线性执行。
+
+只有当前依赖 frontier 上输入已固定、证据可独立验收且读写集合不冲突的节点才能并行。共享 artifact、公共契约、权威外部状态和 Git 状态采用 single-writer，由一个主责 agent 汇总并运行跨节点验证。
 
 ## 安装
 

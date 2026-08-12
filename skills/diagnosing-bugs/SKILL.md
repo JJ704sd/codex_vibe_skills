@@ -19,6 +19,8 @@ Read [references/feedback-loops.md](references/feedback-loops.md) and choose the
 
 Require the loop to be red-capable, repeatable, fast enough for experiments, and agent-runnable except for an explicit human step. For flakes, record sample count and reproduction rate. Treat static analysis as provisional when no safe loop exists.
 
+Build an observation-hypothesis-experiment evidence graph. Give each experiment a context capsule containing the symptom, pinned revision and environment, reproduction, redacted signal, one variable, side-effect class, budget, and stop condition. Independent read-only evidence may be collected in parallel, but shared-environment mutations, production observability, timing-sensitive work, and causal experiments remain serial. One investigator owns hypothesis ranking and causal conclusions.
+
 ## Reproduce and test hypotheses
 
 1. Confirm the observation matches the report; minimize inputs, steps, configuration, and dependencies one at a time.
@@ -28,6 +30,7 @@ Require the loop to be red-capable, repeatable, fast enough for experiments, and
 5. Verify that the leading cause predicts the result, then rerun the original unminimized scenario.
 
 Never log indiscriminately or expose secrets. Obtain approval before changing production observability.
+After each experiment, checkpoint new evidence and re-rank the graph. If two consecutive rounds add no new evidence or repeat the same action/error pattern, stop and redesign the loop or request the smallest missing input; a budget stop is not a diagnosis.
 
 ## Optimize measured bottlenecks
 

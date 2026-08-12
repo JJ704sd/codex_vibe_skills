@@ -5,13 +5,15 @@ description: Resolve an in-progress Git merge or rebase conflict by reconstructi
 
 # Resolving Merge Conflicts
 
-1. Inspect `git status`, the merge or rebase state, recent history, conflicting paths, staged content, and unrelated working-tree changes.
+1. Inspect `git status`, the merge or rebase state, recent history, conflicting paths, staged content, and unrelated working-tree changes. Build a conflict dependency graph that groups shared contracts and exposes genuinely independent conflicts.
 2. Trace each side to primary evidence: the conflicting commits, surrounding history, tests, specs, issues, and available PR context.
 3. Resolve each hunk to preserve both intents when compatible. When intents conflict, follow the authorized merge goal and report the trade-off; do not invent unrelated behavior.
 4. If evidence suggests aborting, explain why and ask the user to decide. Never run `merge --abort`, `rebase --abort`, reset, or another destructive recovery step autonomously.
 5. Stage only resolved conflict paths with explicit path arguments. Never use a whole-tree add or include unrelated changes.
 6. Run the smallest relevant formatting, type, build, and test checks. Inspect `git diff --check`, the remaining unmerged paths, and the staged diff before continuing.
 7. Continue the merge or rebase only when completing the active operation is within the user's request. During a rebase, handle later conflicts one commit at a time.
+
+Subagents may perform read-only analysis of independent conflicts from the same pinned Git state, including the operation, commits, index stages, and hunks. A single resolver owns all file writes, staging, and status checks, and executes a continue only within the user's authorized merge goal. The user retains every abort decision; the resolver never treats single-writer ownership as authorization. Resolve in waves, checkpointing unmerged paths, staged diff, and checks after each wave; any Git-state change invalidates outstanding analysis.
 
 Do not create an extra commit, amend unrelated history, push, or clean the worktree unless the user separately requests it or the already-authorized Git operation strictly requires it.
 

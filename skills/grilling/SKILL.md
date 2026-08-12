@@ -30,6 +30,13 @@ Wait for the answers before asking dependent questions. After every round, updat
 
 Do not ask for a choice when evidence already determines the answer. State the evidence and proceed.
 
+## Keep the interview efficient
+
+- Batch only mutually independent questions from the current frontier; dependent questions remain sequential.
+- After each round, keep a compact checkpoint of pinned inputs, confirmed decisions, accepted assumptions, unresolved frontier, and the next question. Re-evaluate dependent decisions if a pinned input changes.
+- Use a subagent only for an independent, read-only, high-cost fact-finding node with a fixed context capsule. Validate its evidence before updating the decision graph.
+- Do not delegate the user's judgment, interpretation of their answer, confirmation, or the final shared understanding.
+
 ## Finish deliberately
 
 Stop when the frontier is empty or the remaining uncertainty is explicitly accepted. Summarize confirmed decisions, accepted assumptions, unresolved risks, and the next recommended action, then ask the user to confirm the shared understanding.

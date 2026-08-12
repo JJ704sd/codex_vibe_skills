@@ -11,8 +11,9 @@ Move a live contract or external dependency from one valid state to another with
 
 1. Read repository instructions, governing contracts, manifests, lockfiles, deployment topology, supported versions, ownership, and rollback expectations.
 2. Inventory readers, writers, validators, persisted forms, generated clients, manifests, workspace overrides, runtime constraints, CI/container versions, and repository-used dependency APIs as applicable.
-3. State the current and target forms or resolved versions, compatibility window, invariants, supported matrix, irreversible operations, and unrelated changes that are out of scope.
-4. Use `$codebase-design` first when the target public contract remains unresolved. Use `$refactoring-safely` when no mixed-version or external compatibility boundary exists.
+3. Build a producer-reader-storage-deployment dependency graph and a pinned compatibility matrix. Use them to identify phase gates, ownership, recovery paths, and safe batches.
+4. State the current and target forms or resolved versions, compatibility window, invariants, supported matrix, irreversible operations, and unrelated changes that are out of scope.
+5. Use `$codebase-design` first when the target public contract remains unresolved. Use `$refactoring-safely` when no mixed-version or external compatibility boundary exists.
 
 ## Select evidence and transition
 
@@ -26,6 +27,10 @@ For API, schema, data, event, or configuration changes, read [references/transit
 For dependency, framework, runtime, or toolchain changes, read [references/dependency-upgrades.md](references/dependency-upgrades.md). Use exact-version official guidance, establish a frozen baseline, upgrade one dependency family or compatibility line at a time, and inspect the final resolved graph and lockfile churn.
 
 Do not choose “latest” reflexively, rely on rollout order as compatibility proof, or assume application rollback reverses destructive data changes.
+
+Treat expand, migrate, observe, and contract as explicit phase gates and safe checkpoints. Parallelize read-only compatibility checks against the same matrix, or authorized write batches only when paths are disjoint and operations are bounded, idempotent, and resumable. Authoritative writes, contraction, recovery decisions, shared data, and Git state remain serial under one owner. Before an irreversible or production action, stop with an approval capsule naming evidence, impact, recovery, budget, and next action.
+
+At each checkpoint record the repository revision and compatibility-matrix version, completed phase, durable batch cursor, validation results, unfinished side effects, and next gate. Before resume, revalidate every field against current state. If they differ or the cursor is ambiguous, do not replay writes; return to the last verified safe boundary and choose an authorized recovery path.
 
 ## Verify every state
 

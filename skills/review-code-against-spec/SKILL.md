@@ -17,6 +17,10 @@ Honor a user-supplied base, range, PR, or commit. Otherwise infer only when unam
 
 Capture the effective endpoints, commit context when applicable, changed-file list, and raw patch. Stop clearly if the reference is invalid or the effective change set is empty. Ask before proceeding only when competing bases materially change the review.
 
+Build a requirements-files-checks coverage map over the pinned change set. For a large review, the Standards and Spec passes may run as independent read-only workers from the same context capsule of endpoints, raw diff, governing sources, and exclusions. At fan-in, a single report writer verifies the input is unchanged, resolves conflicting evidence from primary sources, deduplicates findings, and fills coverage gaps. A changed diff invalidates worker conclusions.
+
+Allocate a risk-first worker and iteration budget: inspect high-impact requirements, trust boundaries, shared state, and cross-file behavior before low-risk areas. Expand the review only when new evidence or a material coverage gap justifies the cost. A budget stop is not a clean review; report every unreviewed area as a residual verification gap.
+
 ## Find governing sources
 
 Find the spec in this order:
@@ -45,6 +49,8 @@ Perform two separate passes over the same raw change set so one conclusion does 
 - Find missing or partial requirements, incorrect implemented behavior, and unrequested scope.
 - Cite the exact requirement, acceptance criterion, or approved behavior for every finding.
 - Do not reinterpret an ambiguous spec as a definite defect; surface the ambiguity separately.
+
+Iterate only to gather missing evidence or close coverage-map gaps. Do not let review workers modify code, vote findings into correctness, or fragment work so narrowly that cross-file behavior is lost.
 
 ## Report findings first
 
