@@ -73,6 +73,7 @@ $efficiencyContracts = @{
     )
     'diagnosing-bugs' = @(
         @{ Label = 'conditional feedback-loop disclosure'; Patterns = @('(?i)reuse an established exact loop only after confirming', '(?i)pinned revision and environment', '(?i)repeatable, safe, and authorized', '(?i)otherwise.{0,160}read \[references/feedback-loops\.md\]', '(?i)known workload and objective.{0,80}read \[references/performance\.md\].{0,80}instead') },
+        @{ Label = 'Windows GitHub credential-context diagnosis'; Patterns = @('(?i)references/windows-github-credentials\.md', '(?i)scripts/Test-WindowsGitHubAuthContext\.ps1', '(?i)credential-visibility boundary', '(?i)before asking the user to log in again') },
         @{ Label = 'experiment evidence graph and capsule'; Patterns = @('(?i)observation-hypothesis-experiment evidence graph', '(?i)context capsule') },
         @{ Label = 'parallel read-only evidence'; Patterns = @('(?i)independent read-only evidence.{0,80}parallel') },
         @{ Label = 'causal experiments stay serial'; Patterns = @('(?i)causal experiments remain serial') },
