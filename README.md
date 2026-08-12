@@ -19,11 +19,19 @@
 
 - [设计规范](docs/coding-core-skills-spec.md)
 - [开发场景编排提效规范](docs/development-orchestration-efficiency-spec.md)
-- Windows 校验：
+- Windows 结构与内容校验：
 
   ```powershell
   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-CoreSkills.ps1
   ```
+
+- 校验器负向行为测试：
+
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-CoreSkills.Validator.ps1
+  ```
+
+GitHub Actions 会在 push、pull request 和手动触发时运行上述两层自检；校验任务仅授予仓库内容只读权限。
 
 每个技能包含最小 `SKILL.md`、桌面端 UI 元数据 `agents/openai.yaml`，以及仅在需要时加载的 `references/`。
 

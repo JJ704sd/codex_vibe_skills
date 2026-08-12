@@ -73,8 +73,9 @@ merge/rebase 冲突中 ──> resolving-merge-conflicts
 ## 5. 内容与元数据约束
 
 - `SKILL.md` frontmatter 仅含 `name` 和 `description`；description 写清触发与排除边界；正文不超过本地 100 行预算。
-- `agents/openai.yaml` 包含带引号的 `display_name`、25–64 字符 `short_description` 和显式提及 `$skill-name` 的 `default_prompt`。
+- `agents/openai.yaml` 仅含 `interface` 下带引号的 `display_name`、25–64 字符 `short_description` 和显式提及 `$skill-name` 的 `default_prompt`，不接受重复键或额外字段。
 - 细节只在能降低主入口上下文时放入一层 `references/`，且必须由 `SKILL.md` 直接链接。
+- README、规范和 skill 文档中的仓库内相对链接必须存在且不得逃逸仓库根目录。
 - 不创建辅助 README、变更日志、安装说明或未引用资源。
 
 ## 6. 验收案例
@@ -98,7 +99,8 @@ merge/rebase 冲突中 ──> resolving-merge-conflicts
 
 - 工作区恰有上述 8 个 skill，目录、frontmatter、元数据和 README 同步。
 - 相对链接、孤立资源、模板标记和未安装 skill 调用为 0。
-- 仓库验证器与系统 `quick_validate.py` 全部通过。
+- 仓库验证器、校验器负向行为测试与系统 `quick_validate.py` 全部通过。
+- GitHub Actions 在 push、pull request 和手动触发时以只读仓库权限运行两层仓库自检。
 - 高重叠边界有正例、反例或交接案例；复杂合并点做代表性前向检查。
 
 ## 8. 本轮实施
