@@ -10,9 +10,10 @@ Preserve observable behavior while improving internal structure. Treat “no beh
 ## Fix the preservation boundary
 
 1. Read repository instructions, relevant specs and ADRs, callers, tests, and the requested refactor scope. Inspect the worktree and record pre-existing changes, especially overlaps with target files.
-2. State what must remain unchanged: public inputs and outputs, errors, side effects, ordering, persistence, wire formats, timing guarantees, and supported compatibility where applicable.
-3. Record intended structural changes separately. If the request mixes behavioral and structural changes, split them into independently verifiable phases.
-4. Use `$codebase-design` first when the target boundary or interface is unresolved. Use `$evolving-contracts` when old and new contract versions must coexist.
+2. Build an impact graph from definitions to callers, tests, configuration, reflection, generated artifacts, and external formats; use it to order migration waves and expose independent paths.
+3. State what must remain unchanged: public inputs and outputs, errors, side effects, ordering, persistence, wire formats, timing guarantees, and supported compatibility where applicable.
+4. Record intended structural changes separately. If the request mixes behavioral and structural changes, split them into independently verifiable phases.
+5. Use `$codebase-design` first when the target boundary or interface is unresolved. Use `$evolving-contracts` when old and new contract versions must coexist.
 
 ## Establish proof
 
@@ -21,6 +22,8 @@ Run the smallest relevant existing checks before editing and record the baseline
 Read [references/preservation-evidence.md](references/preservation-evidence.md) when tests are sparse, outputs are large, or the change is mechanical across many callers. Add characterization coverage only for important observable behavior not already protected. Do not freeze accidental internals merely to make the refactor feel safer.
 
 ## Change in reversible steps
+
+Give each migration wave a pinned baseline context capsule, exclusive paths, and completion command. Read-only impact discovery may run in parallel. Writes may fan out only over disjoint paths; a single writer owns each shared boundary, generated artifact, and final integration. Old-path deletion, global preservation proof, and Git operations remain serial. After every wave, create a preservation checkpoint. If the input, baseline, impact graph, or evidence changes, stop the current wave immediately, re-pin them, and revalidate affected work before resuming.
 
 1. Make one coherent structural transformation at a time.
 2. Keep the tree runnable whenever the language and migration shape permit it. Prefer compiler- or tool-assisted moves and renames over blind text replacement.

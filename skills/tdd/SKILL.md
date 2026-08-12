@@ -15,6 +15,10 @@ Identify the interface through which a real caller observes the behavior. Derive
 
 Use `$codebase-design` first when the interface itself is unresolved. Do not test private methods or internal collaborators merely because they are convenient.
 
+## Plan behavior slices
+
+Build a small behavior-slice graph from acceptance criteria to public seams, focused red commands, affected paths, and cross-slice dependencies. Keep one writer for the same public seam. Fan out only current-frontier slices with no cross-slice dependency that can demonstrate an independent red and have disjoint write sets, test state, and side effects; otherwise keep them serial. Parallelize only when critical-path savings exceed coordination cost. Give each worker the pinned baseline and an explicit context capsule. Each worker completes one slice at a time through red-green-refactor. At fan-in, one integrator inspects the combined diff and creates a green checkpoint with the cross-slice checks before opening the next frontier.
+
 ## Repeat red-green-refactor
 
 For one vertical behavior slice at a time:
@@ -24,6 +28,7 @@ For one vertical behavior slice at a time:
 3. **Refactor**: improve names, duplication, and structure without changing behavior. Keep the relevant tests green after each change.
 
 Do not write the entire test suite first or implement layer by layer. Let each completed slice inform the next.
+Do not enter green without the intended red. Stop or route to `$codebase-design` or `$diagnosing-bugs` when another attempt would repeat the same failure without new evidence.
 
 ## Keep tests honest
 
