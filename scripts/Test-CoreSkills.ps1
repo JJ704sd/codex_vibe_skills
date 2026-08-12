@@ -35,6 +35,42 @@ function Test-ContractRule([string]$Text, [string[]]$Patterns) {
     return $true
 }
 
+function Test-MarkdownRelativeLinks([IO.FileInfo]$MarkdownFile, [string]$AllowedRoot) {
+    $markdownText = Get-Content -Raw -Encoding UTF8 -LiteralPath $MarkdownFile.FullName
+    $rootPath = [IO.Path]::GetFullPath($AllowedRoot).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    $rootPrefix = $rootPath + [IO.Path]::DirectorySeparatorChar
+    foreach ($match in [regex]::Matches($markdownText, '!?(?:\[[^\]]*\])\((?<target>[^)]+)\)')) {
+        $target = $match.Groups['target'].Value.Trim()
+        if ($target.StartsWith('<') -and $target.EndsWith('>')) {
+            $target = $target.Substring(1, $target.Length - 2)
+        }
+        if ([string]::IsNullOrWhiteSpace($target) -or $target.StartsWith('#') -or $target -match '^[a-z][a-z0-9+.-]*:') {
+            continue
+        }
+
+        $pathPart = ($target -split '[?#]', 2)[0]
+        if ([string]::IsNullOrWhiteSpace($pathPart)) { continue }
+        try {
+            $pathPart = [Uri]::UnescapeDataString($pathPart)
+            if ($pathPart.StartsWith('/') -or $pathPart.StartsWith('\')) {
+                $resolvedTarget = [IO.Path]::GetFullPath((Join-Path $rootPath $pathPart.TrimStart([char[]]@('/', '\'))))
+            } else {
+                $resolvedTarget = [IO.Path]::GetFullPath((Join-Path $MarkdownFile.DirectoryName $pathPart))
+            }
+        } catch {
+            Add-ValidationError "Invalid relative link '$target' in $($MarkdownFile.FullName.Substring($rootPrefix.Length))"
+            continue
+        }
+
+        if (-not $resolvedTarget.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -and
+            -not $resolvedTarget.Equals($rootPath, [StringComparison]::OrdinalIgnoreCase)) {
+            Add-ValidationError "Relative link escapes repository root: '$target' in $($MarkdownFile.FullName.Substring($rootPrefix.Length))"
+        } elseif (-not (Test-Path -LiteralPath $resolvedTarget)) {
+            Add-ValidationError "Broken relative link '$target' in $($MarkdownFile.FullName.Substring($rootPrefix.Length))"
+        }
+    }
+}
+
 $efficiencyContracts = @{
     'grilling' = @(
         @{ Label = 'decision graph and frontier'; Patterns = @('(?i)\bdecision graph\b', '(?i)\bcurrent frontier\b') },
@@ -158,6 +194,20 @@ if (-not (Test-Path -LiteralPath $readmePath -PathType Leaf)) {
     if ($extraDocumentedSkills.Count -gt 0) { Add-ValidationError "README has unexpected skills: $($extraDocumentedSkills -join ', ')" }
 }
 
+$repositoryMarkdownFiles = @()
+if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
+    $repositoryMarkdownFiles += Get-Item -LiteralPath $readmePath
+}
+foreach ($markdownRootName in @('docs', 'skills')) {
+    $markdownRoot = Join-Path $repositoryRoot $markdownRootName
+    if (Test-Path -LiteralPath $markdownRoot -PathType Container) {
+        $repositoryMarkdownFiles += Get-ChildItem -LiteralPath $markdownRoot -Recurse -File -Filter '*.md'
+    }
+}
+foreach ($markdownFile in $repositoryMarkdownFiles) {
+    Test-MarkdownRelativeLinks $markdownFile $repositoryRoot
+}
+
 foreach ($skillName in $expectedSkills) {
     $skillRoot = Join-Path $SkillsRoot $skillName
     if (-not (Test-Path -LiteralPath $skillRoot -PathType Container)) { continue }
@@ -178,13 +228,19 @@ foreach ($skillName in $expectedSkills) {
         Add-ValidationError "${skillName}: invalid YAML frontmatter delimiters"
     } else {
         $frontmatter = @{}
+        $frontmatterKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
         foreach ($line in ($frontmatterMatch.Groups['yaml'].Value -split '\r?\n')) {
             $field = [regex]::Match($line, '^(?<key>[A-Za-z0-9-]+):\s*(?<value>.*)$')
             if (-not $field.Success) {
                 Add-ValidationError "${skillName}: unsupported frontmatter line '$line'"
                 continue
             }
-            $frontmatter[$field.Groups['key'].Value] = $field.Groups['value'].Value.Trim()
+            $key = $field.Groups['key'].Value
+            if (-not $frontmatterKeys.Add($key)) {
+                Add-ValidationError "${skillName}: duplicate frontmatter key '$key'"
+                continue
+            }
+            $frontmatter[$key] = $field.Groups['value'].Value.Trim()
         }
 
         $unexpectedKeys = @($frontmatter.Keys | Where-Object { $_ -notin @('name', 'description') })
@@ -261,21 +317,21 @@ foreach ($skillName in $expectedSkills) {
 
     if (Test-Path -LiteralPath $agentFile -PathType Leaf) {
         $agentText = Get-Content -Raw -Encoding UTF8 -LiteralPath $agentFile
-        foreach ($key in @('display_name', 'short_description', 'default_prompt')) {
-            $interfacePattern = '(?m)^  ' + [regex]::Escape($key) + ': "[^"]+"\r?$'
-            if ($agentText -notmatch $interfacePattern) {
-                Add-ValidationError "${skillName}: missing or unquoted interface.$key"
-            }
-        }
-        $shortMatch = [regex]::Match($agentText, '(?m)^  short_description: "(?<value>[^"]+)"\r?$')
-        if ($shortMatch.Success) {
-            $shortLength = $shortMatch.Groups['value'].Value.Length
+        $agentPattern = '\Ainterface:\r?\n' +
+            '  display_name: "(?<display_name>[^"\r\n]+)"\r?\n' +
+            '  short_description: "(?<short_description>[^"\r\n]+)"\r?\n' +
+            '  default_prompt: "(?<default_prompt>[^"\r\n]+)"\r?\n?\z'
+        $agentMatch = [regex]::Match($agentText, $agentPattern)
+        if (-not $agentMatch.Success) {
+            Add-ValidationError "${skillName}: invalid agents/openai.yaml structure"
+        } else {
+            $shortLength = $agentMatch.Groups['short_description'].Value.Length
             if ($shortLength -lt 25 -or $shortLength -gt 64) {
                 Add-ValidationError "${skillName}: short_description must be 25-64 characters"
             }
-        }
-        if (-not $agentText.Contains('$' + $skillName)) {
-            Add-ValidationError ($skillName + ': default_prompt must explicitly mention $' + $skillName)
+            if (-not $agentMatch.Groups['default_prompt'].Value.Contains('$' + $skillName)) {
+                Add-ValidationError ($skillName + ': default_prompt must explicitly mention $' + $skillName)
+            }
         }
     }
 }
