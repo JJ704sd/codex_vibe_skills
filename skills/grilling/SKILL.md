@@ -30,11 +30,13 @@ Wait for the answers before asking dependent questions. After every round, updat
 
 Do not ask for a choice when evidence already determines the answer. State the evidence and proceed.
 
+After two consecutive rounds that neither close, narrow, nor reorder a frontier decision, add evidence, or change constraints, stop before repeating a question and report the minimum unresolved decision or evidence. Budget exhaustion is incomplete, not confirmation.
+
 ## Keep the interview efficient
 
 - Batch only mutually independent questions from the current frontier; dependent questions remain sequential.
 - After each round, keep a compact checkpoint of pinned inputs, confirmed decisions, accepted assumptions, unresolved frontier, and the next question. Re-evaluate dependent decisions if a pinned input changes.
-- Use a subagent only for an independent, read-only, high-cost fact-finding node with a fixed context capsule. Validate its evidence before updating the decision graph.
+- For an independent, read-only, high-cost fact-finding subagent, pin the question, repository revision/paths, expected evidence, and budget/stop; otherwise investigate serially. Validate its evidence before updating the graph.
 - Do not delegate the user's judgment, interpretation of their answer, confirmation, or the final shared understanding.
 
 ## Finish deliberately

@@ -15,7 +15,7 @@ Redact credentials, tokens, cookies, authorization headers, personal data, and s
 
 ## Build the feedback loop
 
-Read [references/feedback-loops.md](references/feedback-loops.md) and choose the smallest safe loop that exercises the exact symptom or target workload. Record a runnable command and redacted signal.
+Reuse an established exact loop only after confirming it still matches the pinned revision and environment and remains repeatable, safe, and authorized. Otherwise, or for a flake, human step, or substitute reproduction, read [references/feedback-loops.md](references/feedback-loops.md) and choose the smallest safe loop. Record its command or workload and redacted signal. For optimization with a known workload and objective, read [references/performance.md](references/performance.md) instead.
 
 Require the loop to be red-capable, repeatable, fast enough for experiments, and agent-runnable except for an explicit human step. For flakes, record sample count and reproduction rate. Treat static analysis as provisional when no safe loop exists.
 
@@ -34,7 +34,7 @@ After each experiment, checkpoint new evidence and re-rank the graph. If two con
 
 ## Optimize measured bottlenecks
 
-When the workload and objective are known and optimization is requested, read [references/performance.md](references/performance.md). Establish a comparable distribution, profile the limiting resource, change one variable, and compare the same workload before and after.
+When the workload and objective are known and optimization is requested, establish a comparable distribution, profile the limiting resource, change one variable, and compare the same workload before and after.
 
 Run repeated or worst-case workloads in a controlled local or test environment. Require separate approval, bounded load, and stop conditions before production profiling, load, or side effects. Reject changes within noise or with unacceptable correctness, security, durability, or resource trade-offs.
 

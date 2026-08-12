@@ -17,7 +17,7 @@ Use `$codebase-design` first when the interface itself is unresolved. Do not tes
 
 ## Plan behavior slices
 
-Build a small behavior-slice graph from acceptance criteria to public seams, focused red commands, affected paths, and cross-slice dependencies. Keep one writer for the same public seam. Fan out only current-frontier slices with no cross-slice dependency that can demonstrate an independent red and have disjoint write sets, test state, and side effects; otherwise keep them serial. Parallelize only when critical-path savings exceed coordination cost. Give each worker the pinned baseline and an explicit context capsule. Each worker completes one slice at a time through red-green-refactor. At fan-in, one integrator inspects the combined diff and creates a green checkpoint with the cross-slice checks before opening the next frontier.
+Build a small behavior-slice graph from acceptance criteria to public seams, focused red commands, affected paths, and cross-slice dependencies. Keep one writer for the same public seam. Fan out only current-frontier slices with no cross-slice dependency that can demonstrate an independent red and have disjoint write sets, test state, and side effects; otherwise keep them serial. Parallelize only when critical-path savings exceed coordination cost. Give each worker a context capsule with objective/slice; pinned baseline; dependencies/constraints; allowed reads/writes/side effects; commands/evidence; budget/stop; and risks. Each worker completes one slice at a time through red-green-refactor. At fan-in, one integrator inspects the combined diff and creates a green checkpoint with the cross-slice checks before opening the next frontier.
 
 ## Repeat red-green-refactor
 

@@ -23,7 +23,7 @@ Read [references/preservation-evidence.md](references/preservation-evidence.md) 
 
 ## Change in reversible steps
 
-Give each migration wave a pinned baseline context capsule, exclusive paths, and completion command. Read-only impact discovery may run in parallel. Writes may fan out only over disjoint paths; a single writer owns each shared boundary, generated artifact, and final integration. Old-path deletion, global preservation proof, and Git operations remain serial. After every wave, create a preservation checkpoint. If the input, baseline, impact graph, or evidence changes, stop the current wave immediately, re-pin them, and revalidate affected work before resuming.
+For each wave, pin a context capsule with baseline; exclusive paths/side effects; completion command/evidence; budget/stop; risks; and last checkpoint/resume gate. Parallelize read-only impact discovery or disjoint-path writes only within one unlocked current frontier when saved critical-path time exceeds dispatch, rereading, and fan-in cost. A single writer owns each shared boundary, generated artifact, and final integration. Old-path deletion, global preservation proof, and Git operations remain serial. After every wave, create a preservation checkpoint. If the input, baseline, impact graph, or evidence changes, stop the current wave immediately, re-pin them, and revalidate affected work before resuming.
 
 1. Make one coherent structural transformation at a time.
 2. Keep the tree runnable whenever the language and migration shape permit it. Prefer compiler- or tool-assisted moves and renames over blind text replacement.

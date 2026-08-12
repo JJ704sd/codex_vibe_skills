@@ -26,9 +26,9 @@ Design substantial behavior behind a small, explicit interface at a clean seam.
 7. For authentication, authorization, secrets, untrusted input, tenant isolation, privileged operations, or new exposure, read [references/security-design.md](references/security-design.md) and derive security invariants before settling the contract.
 8. Treat the public interface and approved invariants as the primary test surface; keep implementation details private.
 9. When alternatives matter, read [references/design-it-twice.md](references/design-it-twice.md) and compare materially different contracts.
-10. Recommend one design. State the contract, dependency strategy, migration path, leverage, locality, trade-offs, verification seams, and unresolved risks.
+10. Report one final recommendation in the response, covering the contract, dependency strategy, migration path, leverage, locality, trade-offs, verification seams, and unresolved risks. Write a durable design only when the user requests it and identifies or approves the destination.
 
-For a consequential design, independent subagents may derive alternatives from the same context capsule: pinned evidence, caller constraints, relevant paths, permitted read/write scope, expected evidence, and stop budget. One integrator compares them against the constraints, resolves conflicts from primary evidence, and owns the durable design. Do not use majority vote or let workers concurrently edit one design draft.
+For a consequential design, independent subagents may derive alternatives from the same context capsule: pinned evidence, caller constraints, relevant paths, permitted read/write scope, expected evidence, and stop budget. One integrator compares them against the constraints, resolves conflicts from primary evidence, and owns the final recommendation. Do not use majority vote or let workers concurrently edit one design draft.
 
 ## Guardrails
 
@@ -36,5 +36,6 @@ For a consequential design, independent subagents may derive alternatives from t
 - Do not add a seam or threat control for hypothetical variation. Require concrete caller needs or plausible attack paths.
 - Prefer fewer entry points and simpler parameters, but never hide constraints callers must understand.
 - Freeze a constraint checkpoint before implementation. Invalidate affected alternatives when the spec, topology, trust boundary, or pinned repository input changes.
+- Use `$grilling` when the remaining blocker is an undiscoverable judgment held by the current user; do not invent that judgment.
 - Use `$evolving-contracts` when old and new public, persisted, or dependency versions must coexist.
 - If the design is settled and implementation is requested, use normal implementation or `$tdd` when test-first work is desired.

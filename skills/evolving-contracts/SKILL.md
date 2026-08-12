@@ -28,7 +28,7 @@ For dependency, framework, runtime, or toolchain changes, read [references/depen
 
 Do not choose “latest” reflexively, rely on rollout order as compatibility proof, or assume application rollback reverses destructive data changes.
 
-Treat expand, migrate, observe, and contract as explicit phase gates and safe checkpoints. Parallelize read-only compatibility checks against the same matrix, or authorized write batches only when paths are disjoint and operations are bounded, idempotent, and resumable. Authoritative writes, contraction, recovery decisions, shared data, and Git state remain serial under one owner. Before an irreversible or production action, stop with an approval capsule naming evidence, impact, recovery, budget, and next action.
+Treat expand, migrate, observe, and contract as explicit phase gates and safe checkpoints. Parallelize same-matrix read checks or authorized write batches only within one unlocked current frontier when saved critical-path time exceeds dispatch, rereading, and fan-in cost; writes must be disjoint and bounded, idempotent, and resumable. Authoritative writes, contraction, recovery decisions, shared data, and Git state remain serial under one owner. Before an irreversible or production action, stop with an approval capsule naming evidence, impact, recovery, budget, and next action.
 
 At each checkpoint record the repository revision and compatibility-matrix version, completed phase, durable batch cursor, validation results, unfinished side effects, and next gate. Before resume, revalidate every field against current state. If they differ or the cursor is ambiguous, do not replay writes; return to the last verified safe boundary and choose an authorized recovery path.
 

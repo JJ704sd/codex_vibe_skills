@@ -39,31 +39,40 @@ $efficiencyContracts = @{
     'grilling' = @(
         @{ Label = 'decision graph and frontier'; Patterns = @('(?i)\bdecision graph\b', '(?i)\bcurrent frontier\b') },
         @{ Label = 'checkpoint with pinned inputs'; Patterns = @('(?i)\bcheckpoint\b', '(?i)\bpinned inputs\b') },
+        @{ Label = 'bounded no-progress stop'; Patterns = @('(?i)two consecutive rounds', '(?i)neither close, narrow, nor reorder', '(?i)add evidence', '(?i)change constraints', '(?i)stop before repeating a question', '(?i)budget exhaustion is incomplete') },
+        @{ Label = 'fixed fact-finding capsule'; Patterns = @('(?i)pin the question', '(?i)repository revision/paths', '(?i)expected evidence', '(?i)budget/stop', '(?i)otherwise investigate serially') },
         @{ Label = 'user judgment is not delegated'; Patterns = @("(?i)do not delegate the user's judgment") }
     )
     'codebase-design' = @(
         @{ Label = 'dependency and trust-boundary graph'; Patterns = @('(?i)dependency and trust-boundary graph') },
         @{ Label = 'independent alternatives share one capsule'; Patterns = @('(?i)independent subagents', '(?i)same context capsule') },
-        @{ Label = 'one design integrator'; Patterns = @('(?i)one integrator', '(?i)do not use majority vote') }
+        @{ Label = 'one design integrator'; Patterns = @('(?i)one integrator', '(?i)do not use majority vote') },
+        @{ Label = 'response-only design by default'; Patterns = @('(?i)report one final recommendation in the response', '(?i)only when the user requests it', '(?i)identifies or approves the destination') },
+        @{ Label = 'user-judgment handoff'; Patterns = @('(?i)\$grilling', '(?i)undiscoverable judgment held by the current user') }
     )
     'tdd' = @(
         @{ Label = 'behavior-slice graph'; Patterns = @('(?i)behavior-slice graph') },
         @{ Label = 'safe independent red fan-out'; Patterns = @('(?i)current-frontier slices with no cross-slice dependency', '(?i)independent red', '(?i)disjoint write sets', '(?i)coordination cost') },
+        @{ Label = 'complete worker capsule'; Patterns = @('(?i)objective/slice', '(?i)pinned baseline', '(?i)dependencies/constraints', '(?i)allowed reads/writes/side effects', '(?i)commands/evidence', '(?i)budget/stop', '(?i)and risks') },
         @{ Label = 'single seam owner and worker-local loop'; Patterns = @('(?i)one writer for the same public seam', '(?i)each worker completes one slice at a time') },
         @{ Label = 'fan-in gates the next frontier'; Patterns = @('(?i)at fan-in', '(?i)before opening the next frontier') }
     )
     'refactoring-safely' = @(
         @{ Label = 'impact graph and migration waves'; Patterns = @('(?i)impact graph', '(?i)migration wave') },
+        @{ Label = 'bounded current-frontier parallelism'; Patterns = @('(?i)unlocked current frontier', '(?i)saved critical-path time exceeds dispatch, rereading, and fan-in cost') },
+        @{ Label = 'complete migration-wave capsule'; Patterns = @('(?i)exclusive paths/side effects', '(?i)completion command/evidence', '(?i)budget/stop', '(?i)risks', '(?i)checkpoint/resume gate') },
         @{ Label = 'single writer and serial proof'; Patterns = @('(?i)a single writer', '(?i)global preservation proof.{0,80}remain serial') },
         @{ Label = 'preservation checkpoint invalidation'; Patterns = @('(?i)preservation checkpoint', '(?i)stop the current wave immediately', '(?i)revalidate affected work before resuming') }
     )
     'evolving-contracts' = @(
         @{ Label = 'contract dependency graph and matrix'; Patterns = @('(?i)producer-reader-storage-deployment dependency graph', '(?i)pinned compatibility matrix') },
         @{ Label = 'phase gates and checkpoints'; Patterns = @('(?i)explicit phase gates', '(?i)safe checkpoints') },
+        @{ Label = 'bounded current-frontier parallelism'; Patterns = @('(?i)unlocked current frontier', '(?i)saved critical-path time exceeds dispatch, rereading, and fan-in cost') },
         @{ Label = 'authoritative writes remain serial'; Patterns = @('(?i)authoritative writes', '(?i)remain serial under one owner') },
         @{ Label = 'checkpoint resume payload'; Patterns = @('(?i)repository revision and compatibility-matrix version', '(?i)durable batch cursor', '(?i)before resume, revalidate every field', '(?i)do not replay writes') }
     )
     'diagnosing-bugs' = @(
+        @{ Label = 'conditional feedback-loop disclosure'; Patterns = @('(?i)reuse an established exact loop only after confirming', '(?i)pinned revision and environment', '(?i)repeatable, safe, and authorized', '(?i)otherwise.{0,160}read \[references/feedback-loops\.md\]', '(?i)known workload and objective.{0,80}read \[references/performance\.md\].{0,80}instead') },
         @{ Label = 'experiment evidence graph and capsule'; Patterns = @('(?i)observation-hypothesis-experiment evidence graph', '(?i)context capsule') },
         @{ Label = 'parallel read-only evidence'; Patterns = @('(?i)independent read-only evidence.{0,80}parallel') },
         @{ Label = 'causal experiments stay serial'; Patterns = @('(?i)causal experiments remain serial') },
@@ -71,13 +80,16 @@ $efficiencyContracts = @{
     )
     'review-code-against-spec' = @(
         @{ Label = 'review coverage map'; Patterns = @('(?i)requirements-files-checks coverage map') },
-        @{ Label = 'pinned read-only dual-axis review'; Patterns = @('(?i)Standards and Spec passes', '(?i)independent read-only workers', '(?i)pinned change set') },
+        @{ Label = 'pinned read-only dual-axis review'; Patterns = @('(?i)Standards and Spec as independent read-only workers', '(?i)pinned change set') },
+        @{ Label = 'bounded current-frontier workers'; Patterns = @('(?i)same current frontier', '(?i)saved critical-path time exceeds dispatch, rereading, and fan-in cost') },
         @{ Label = 'single report fan-in'; Patterns = @('(?i)at fan-in', '(?i)a single report writer') },
-        @{ Label = 'risk-first bounded review'; Patterns = @('(?i)risk-first worker and iteration budget', '(?i)new evidence or a material coverage gap', '(?i)unreviewed area.{0,40}residual verification gap') }
+        @{ Label = 'risk-first bounded review'; Patterns = @('(?i)risk-first review pass and iteration budget', '(?i)new evidence or a material coverage gap', '(?i)unreviewed area.{0,40}residual verification gap') }
     )
     'resolving-merge-conflicts' = @(
         @{ Label = 'conflict dependency graph'; Patterns = @('(?i)conflict dependency graph') },
-        @{ Label = 'read-only independent analysis'; Patterns = @('(?i)read-only analysis of independent conflicts', '(?i)pinned Git state') },
+        @{ Label = 'read-only independent analysis'; Patterns = @('(?i)analyze independent conflicts read-only', '(?i)pinned Git state') },
+        @{ Label = 'bounded current-frontier analysis'; Patterns = @('(?i)unlocked current frontier', '(?i)saved critical-path time exceeds dispatch, rereading, and fan-in cost') },
+        @{ Label = 'ambiguous-semantics stop'; Patterns = @('(?i)cannot uniquely determine the semantics', '(?i)request the minimum user decision', '(?i)do not stage it') },
         @{ Label = 'single Git resolver'; Patterns = @('(?i)a single resolver', '(?i)user retains every abort decision', '(?i)Git-state change invalidates') }
     )
 }
@@ -104,6 +116,7 @@ if (-not (Test-Path -LiteralPath $efficiencySpecPath -PathType Leaf)) {
 } else {
     $efficiencySpecText = Get-Content -Raw -Encoding UTF8 -LiteralPath $efficiencySpecPath
     $specContracts = @(
+        @{ Label = 'current LangGraph sources'; Patterns = @('https://docs\.langchain\.com/oss/python/langgraph/workflows-agents', 'https://docs\.langchain\.com/oss/python/langgraph/persistence') },
         @{ Label = 'fixed input invalidation'; Patterns = @('pinned input', 'revalidate') },
         @{ Label = 'independent frontier and non-conflicting writes'; Patterns = @('current frontier', 'non-conflicting read/write sets') },
         @{ Label = 'single fan-in owner and Git exclusivity'; Patterns = @('fan-in', 'staging.{0,20}commit.{0,20}merge.{0,20}rebase.{0,20}push') },
@@ -115,6 +128,9 @@ if (-not (Test-Path -LiteralPath $efficiencySpecPath -PathType Leaf)) {
         if (-not (Test-ContractRule $efficiencySpecText $rule.Patterns)) {
             Add-ValidationError "Efficiency spec contract missing: $($rule.Label)"
         }
+    }
+    if ($efficiencySpecText -match '(?i)langchain-ai\.github\.io/langgraph|FastContext') {
+        Add-ValidationError 'Development orchestration efficiency spec contains a retired source'
     }
 }
 
