@@ -11,7 +11,7 @@
 | `tdd` | 对已知行为或已验证修复执行 red-green-refactor |
 | `refactoring-safely` | 用明确不变量、绿色基线和小步验证证明重构不改变行为 |
 | `evolving-contracts` | 安全演进 API、数据、schema、依赖和运行时版本 |
-| `diagnosing-bugs` | 诊断未知根因并优化已有基线的性能瓶颈 |
+| `diagnosing-bugs` | 诊断未知根因、Windows GitHub 凭据上下文分离，并优化已有基线的性能瓶颈 |
 | `review-code-against-spec` | 从仓库规范与原始 spec 两个独立轴审查固定 diff |
 | `resolving-merge-conflicts` | 基于双方意图安全处理进行中的 merge/rebase 冲突 |
 
@@ -26,6 +26,8 @@
   ```
 
 每个技能包含最小 `SKILL.md`、桌面端 UI 元数据 `agents/openai.yaml`，以及仅在需要时加载的 `references/`。
+
+当 Codex 沙箱与 Administrator 终端的 `gh auth status` 结论不一致时，`diagnosing-bugs` 会先执行脱敏的双上下文探针，区分 token 失效与 Windows Keyring 可见性边界，再决定是否需要重新登录或在获批上下文执行 Git 网络命令。
 
 ## 开发执行提效
 

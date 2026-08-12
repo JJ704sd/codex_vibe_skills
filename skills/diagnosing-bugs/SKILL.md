@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Diagnose unknown failures, flaky behavior, and performance regressions, or optimize a measured bottleneck with a known workload and objective. Use for reproducible evidence, falsifiable hypotheses, profiling, and controlled experiments; default to diagnosis unless repair or optimization is explicitly requested.
+description: Diagnose unknown failures, flaky behavior, environment-dependent Git or GitHub authentication/push failures, and performance regressions, or optimize a measured bottleneck with a known workload and objective. Use for reproducible evidence, falsifiable hypotheses, profiling, and controlled experiments; default to diagnosis unless repair or optimization is explicitly requested.
 ---
 
 # Diagnosing Bugs and Performance
@@ -18,6 +18,8 @@ Redact credentials, tokens, cookies, authorization headers, personal data, and s
 Reuse an established exact loop only after confirming it still matches the pinned revision and environment and remains repeatable, safe, and authorized. Otherwise, or for a flake, human step, or substitute reproduction, read [references/feedback-loops.md](references/feedback-loops.md) and choose the smallest safe loop. Record its command or workload and redacted signal. For optimization with a known workload and objective, read [references/performance.md](references/performance.md) instead.
 
 Require the loop to be red-capable, repeatable, fast enough for experiments, and agent-runnable except for an explicit human step. For flakes, record sample count and reproduction rate. Treat static analysis as provisional when no safe loop exists.
+
+For GitHub authentication, fetch, push, or PR behavior that differs across Windows terminals, sandboxes, services, or elevated identities, read [references/windows-github-credentials.md](references/windows-github-credentials.md) and run [scripts/Test-WindowsGitHubAuthContext.ps1](scripts/Test-WindowsGitHubAuthContext.ps1) in each relevant execution context. Distinguish invalid authentication from a credential-visibility boundary before asking the user to log in again.
 
 Build an observation-hypothesis-experiment evidence graph. Give each experiment a context capsule containing the symptom, pinned revision and environment, reproduction, redacted signal, one variable, side-effect class, budget, and stop condition. Independent read-only evidence may be collected in parallel, but shared-environment mutations, production observability, timing-sensitive work, and causal experiments remain serial. One investigator owns hypothesis ranking and causal conclusions.
 
