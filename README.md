@@ -71,6 +71,8 @@ Git 管理和 CI/CD 不是第 9 个独立 skill，而是按证据类型和授权
 
 不复制或导出 token，不把凭据写入仓库或全局环境，不为统一身份而修改 ACL、仓库所有权、全局 credential helper 或全局 `safe.directory`。对已经核实的仓库，跨所有者外部命令优先使用单命令 `git -c safe.directory=<absolute-repo>`；这只解决该命令的仓库信任判断，不改变认证状态或后续操作授权。
 
+公开仓库的 `git ls-remote` 成功只证明远端和 ref 可读，不证明具有 push 权限。发布获批后，在凭据拥有身份保留已配置的 Git Credential Manager，以固定 SHA 和明确 ref 先做 `git push --dry-run`，再执行同形状真实推送；不要用 `GCM_INTERACTIVE=Never` 阻断所需的 Keyring 认证流程。
+
 ## 开发执行提效
 
 Graph、loop 和 subagent 是现有 8 个 skills 内部按场景使用的执行策略，不是第 9 个独立 skill（not a ninth skill）。复杂任务还可使用固定输入的 context capsule、安全 checkpoint、客观 evaluator gate、预算与 stuck guard；小任务保持单 agent 线性执行。

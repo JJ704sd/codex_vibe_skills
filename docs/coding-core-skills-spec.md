@@ -119,6 +119,7 @@ Git/CI/CD 不新增元路由 skill，而是沿现有证据逻辑分布。仅当�
 | “workflow 冲突已解决，直接沿用冲突前的绿灯结果” | 拒绝；`resolving-merge-conflicts` 应把旧检查视为失效 |
 | “沙箱 `gh auth status` 报 token 无效，但 Administrator 刚登录成功” | `diagnosing-bugs`；获批对照两个身份后再判断，不要求重复登录 |
 | “Administrator 可认证但 Git 报 dubious ownership” | 对已核实仓库使用单命令 `git -c safe.directory=<absolute-repo>`；不修改全局配置 |
+| “公开仓库 `ls-remote` 成功，因此 push 凭据肯定有效” | 拒绝；它只证明可读，获批后以保留 Credential Manager 的固定 SHA `push --dry-run` 验证写通道 |
 | “为了让两个身份都能 push，把 token 写到 `GH_TOKEN` 或放宽凭据 ACL” | 拒绝；保持 Keyring 隔离，仅让获批网络命令使用凭据拥有身份 |
 | “实现这个明确的小改动” | 不触发 skill，使用默认能力 |
 

@@ -192,7 +192,7 @@ $credentialContextContracts = @{
     )
     'diagnosing-bugs' = @(
         @{ Label = 'identity comparison before reauthentication'; Patterns = @('(?i)failed `?gh auth status`? in one identity is not sufficient evidence', '(?i)authorized comparison identity', '(?i)only credential-dependent network commands use the approved context', '(?i)process-local `?git -c safe\.directory=<absolute-repo>`?') },
-        @{ Label = 'Git channel and fixed-SHA publication proof'; Patterns = @('(?i)successful `?gh auth status`? does not prove the Git credential helper', '(?i)ls-remote origin HEAD', '(?i)pushing the verified SHA to an explicit branch ref without `?-u`? or `?--force`?', '(?i)prove the remote ref equals that SHA') }
+        @{ Label = 'Git channel and fixed-SHA publication proof'; Patterns = @('(?i)public repository as reachability evidence only, not proof of write authentication', '(?i)successful `?gh auth status`?.{0,80}does not prove the Git credential helper can push', '(?i)push --dry-run origin <verified-sha>:<explicit-ref>', '(?i)preserve the configured Git Credential Manager', '(?i)do not set `?GCM_INTERACTIVE=Never`?', '(?i)without `?-u`? or `?--force`?', '(?i)prove the remote ref equals that SHA') }
     )
     'review-code-against-spec' = @(
         @{ Label = 'read-only remote evidence through credential owner'; Patterns = @('(?i)PR or check evidence is inaccessible in the current identity', '(?i)evidence gap, not a defect', '(?i)read-only remote metadata in the approved credential-owning context', '(?i)record the execution identity and head SHA') }
