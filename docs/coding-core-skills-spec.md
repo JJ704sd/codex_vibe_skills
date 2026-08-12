@@ -1,6 +1,6 @@
 # Codex 通用代码核心 Skills 规范
 
-状态：第五轮凭据上下文经验同步，已实施并验证
+状态：第六轮全面质量审计，已实施并验证
 日期：2026-08-12
 参考源：`D:\quality_tests_skills` 与现有工作区
 
@@ -127,8 +127,8 @@ Git/CI/CD 不新增元路由 skill，而是沿现有证据逻辑分布。仅当�
 
 - 工作区恰有上述 8 个 skill，目录、frontmatter、元数据和 README 同步。
 - 相对链接、孤立资源、模板标记和未安装 skill 调用为 0。
-- 仓库验证器、校验器负向行为测试与系统 `quick_validate.py` 全部通过。
-- GitHub Actions 在 push、pull request 和手动触发时以只读仓库权限运行两层仓库自检。
+- 仓库验证器、校验器负向行为测试、Windows GitHub 凭据探针行为测试与系统 `quick_validate.py`（Windows 使用 Python UTF-8 模式）全部通过。
+- GitHub Actions 在 push、pull request 和手动触发时以只读仓库权限运行三层仓库自检。
 - 高重叠边界有正例、反例或交接案例；复杂合并点做代表性前向检查。
 
 ## 8. 本轮实施
@@ -139,4 +139,6 @@ Git/CI/CD 不新增元路由 skill，而是沿现有证据逻辑分布。仅当�
 
 第五轮把 Windows GitHub 凭据上下文分离经验按职责同步到 8 项：详细探针、分类表与安全执行模式仍集中在 `diagnosing-bugs` 的按需 reference；其余入口只保留与本 skill 证据链相关的判断、交接与授权边界。该流程仅在身份间认证结果不一致且当前任务需要 GitHub 凭据时启用。
 
-最终验证结果：仓库验证器与系统 `quick_validate.py` 均为 8/8 通过，`git diff --check` 通过；设计/安全、故障/性能、契约/依赖三组合并点，以及 Git/CI/CD 与凭据上下文的条件触发前向检查，均能正确选择分支、保留授权边界并产出所需证据。普通模块设计、TDD、重构、代码审查和非 workflow 冲突不会被迫追加 CI/CD 或凭据探测；双身份脱敏实测能把“沙箱失败、Keyring 拥有身份成功”分类为 credential-visibility boundary。
+第六轮全面复核 8 个技能的触发边界、渐进披露、UI 元数据、资源链接、脚本与 CI。核心技能正文无需大幅改写；修正集中在严格 UTF-8 与 LF 约束、CI 契约校验、校验器负向覆盖，以及凭据探针的仓库前置检查和防御性脱敏。
+
+最终验证结果：三套仓库测试全部通过，系统 `quick_validate.py` 在 Python UTF-8 模式下 8/8 通过，`git diff --check` 通过；设计/安全、故障/性能、契约/依赖三组合并点，以及 Git/CI/CD 与凭据上下文的条件触发前向检查，均能正确选择分支、保留授权边界并产出所需证据。普通模块设计、TDD、重构、代码审查和非 workflow 冲突不会被迫追加 CI/CD 或凭据探测；探针会先拒绝无效仓库上下文，并能把“沙箱失败、Keyring 拥有身份成功”分类为 credential-visibility boundary。

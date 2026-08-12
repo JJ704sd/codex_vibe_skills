@@ -71,6 +71,26 @@ function Test-MarkdownRelativeLinks([IO.FileInfo]$MarkdownFile, [string]$Allowed
     }
 }
 
+function Test-StrictUtf8([IO.FileInfo]$File, [string]$AllowedRoot) {
+    try {
+        $utf8 = [Text.UTF8Encoding]::new($false, $true)
+        [void]$utf8.GetString([IO.File]::ReadAllBytes($File.FullName))
+    } catch {
+        $relativePath = $File.FullName.Substring($AllowedRoot.Length + 1)
+        Add-ValidationError "Text file is not valid UTF-8: $relativePath"
+    }
+}
+
+function Test-PowerShellSyntax([IO.FileInfo]$ScriptFile, [string]$AllowedRoot) {
+    $tokens = $null
+    $parseErrors = $null
+    [void][Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref]$tokens, [ref]$parseErrors)
+    foreach ($parseError in $parseErrors) {
+        $relativePath = $ScriptFile.FullName.Substring($AllowedRoot.Length + 1)
+        Add-ValidationError "Invalid PowerShell syntax in ${relativePath}:$($parseError.Extent.StartLineNumber): $($parseError.Message)"
+    }
+}
+
 $efficiencyContracts = @{
     'grilling' = @(
         @{ Label = 'decision graph and frontier'; Patterns = @('(?i)\bdecision graph\b', '(?i)\bcurrent frontier\b') },
@@ -192,6 +212,7 @@ $credentialContextContracts = @{
     )
     'diagnosing-bugs' = @(
         @{ Label = 'identity comparison before reauthentication'; Patterns = @('(?i)failed `?gh auth status`? in one identity is not sufficient evidence', '(?i)authorized comparison identity', '(?i)only credential-dependent network commands use the approved context', '(?i)process-local `?git -c safe\.directory=<absolute-repo>`?') },
+        @{ Label = 'repository preflight before authentication classification'; Patterns = @('(?i)git_repository_valid: true', '(?i)bad path, missing Git executable, or non-repository', '(?i)local preflight failure, not credential evidence') },
         @{ Label = 'Git channel and fixed-SHA publication proof'; Patterns = @('(?i)public repository as reachability evidence only, not proof of write authentication', '(?i)successful `?gh auth status`?.{0,80}does not prove the Git credential helper can push', '(?i)push --dry-run origin <verified-sha>:<explicit-ref>', '(?i)preserve the configured Git Credential Manager', '(?i)do not set `?GCM_INTERACTIVE=Never`?', '(?i)without `?-u`? or `?--force`?', '(?i)prove the remote ref equals that SHA') }
     )
     'review-code-against-spec' = @(
@@ -219,6 +240,59 @@ if ($extraSkills.Count -gt 0) { Add-ValidationError "Unexpected skills: $($extra
 
 $efficiencySpecPath = Join-Path $repositoryRoot 'docs\development-orchestration-efficiency-spec.md'
 $readmePath = Join-Path $repositoryRoot 'README.md'
+$attributesPath = Join-Path $repositoryRoot '.gitattributes'
+$workflowPath = Join-Path $repositoryRoot '.github\workflows\validate.yml'
+
+if (-not (Test-Path -LiteralPath $attributesPath -PathType Leaf)) {
+    Add-ValidationError '.gitattributes is missing'
+} elseif ((Get-Content -Raw -Encoding UTF8 -LiteralPath $attributesPath) -notmatch '(?m)^\* text=auto eol=lf\s*$') {
+    Add-ValidationError '.gitattributes does not enforce LF text files'
+}
+
+if (-not (Test-Path -LiteralPath $workflowPath -PathType Leaf)) {
+    Add-ValidationError 'Core skill validation workflow is missing'
+} else {
+    $workflowText = Get-Content -Raw -Encoding UTF8 -LiteralPath $workflowPath
+    $workflowContracts = @(
+        @{ Label = 'push trigger'; Patterns = @('(?m)^  push:\s*$') },
+        @{ Label = 'pull request trigger'; Patterns = @('(?m)^  pull_request:\s*$') },
+        @{ Label = 'manual trigger'; Patterns = @('(?m)^  workflow_dispatch:\s*$') },
+        @{ Label = 'read-only repository permission'; Patterns = @('(?ms)^permissions:\r?\n  contents: read\s*(?:\r?\n|$)') },
+        @{ Label = 'credential-free checkout'; Patterns = @('(?m)^\s+persist-credentials: false\s*$') },
+        @{ Label = 'bounded validation job'; Patterns = @('(?m)^\s+timeout-minutes: 5\s*$') }
+    )
+    foreach ($rule in $workflowContracts) {
+        if (-not (Test-ContractRule $workflowText $rule.Patterns)) {
+            Add-ValidationError "Validation workflow contract missing: $($rule.Label)"
+        }
+    }
+    if ($workflowText -match '(?m)^\s*pull_request_target\s*:') {
+        Add-ValidationError 'Validation workflow must not use pull_request_target'
+    }
+    if ($workflowText -match '(?im)^\s*(?:permissions|[a-z-]+):\s*(?:write|write-all)\s*$') {
+        Add-ValidationError 'Validation workflow grants write permission'
+    }
+    foreach ($actionUse in [regex]::Matches($workflowText, '(?m)^\s*uses:\s*(?<action>[^\s#]+)')) {
+        $action = $actionUse.Groups['action'].Value
+        if ($action.StartsWith('./') -or $action.StartsWith('docker://')) { continue }
+        if ($action -notmatch '@[0-9a-fA-F]{40}$') {
+            Add-ValidationError "Validation workflow external action is not pinned to a full commit SHA: $action"
+        }
+    }
+    foreach ($scriptName in @(
+        'Test-CoreSkills.ps1',
+        'Test-CoreSkills.Validator.ps1',
+        'Test-WindowsGitHubAuthContext.Validator.ps1'
+    )) {
+        if ($workflowText -notmatch [regex]::Escape("scripts\$scriptName")) {
+            Add-ValidationError "Validation workflow does not run scripts\$scriptName"
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $repositoryRoot "scripts\$scriptName") -PathType Leaf)) {
+            Add-ValidationError "Validation script is missing: scripts\$scriptName"
+        }
+    }
+}
+
 if (-not (Test-Path -LiteralPath $efficiencySpecPath -PathType Leaf)) {
     Add-ValidationError 'Development orchestration efficiency spec is missing'
 } else {
@@ -277,6 +351,24 @@ foreach ($markdownRootName in @('docs', 'skills')) {
 }
 foreach ($markdownFile in $repositoryMarkdownFiles) {
     Test-MarkdownRelativeLinks $markdownFile $repositoryRoot
+}
+
+$repositoryTextFiles = @()
+foreach ($relativeTextRoot in @('.gitattributes', 'LICENSE', 'README.md', '.github', 'docs', 'scripts', 'skills')) {
+    $textRoot = Join-Path $repositoryRoot $relativeTextRoot
+    if (Test-Path -LiteralPath $textRoot -PathType Leaf) {
+        $repositoryTextFiles += Get-Item -LiteralPath $textRoot
+    } elseif (Test-Path -LiteralPath $textRoot -PathType Container) {
+        $repositoryTextFiles += Get-ChildItem -LiteralPath $textRoot -Recurse -File |
+            Where-Object { $_.Extension -in @('.md', '.ps1', '.yaml', '.yml') }
+    }
+}
+$repositoryTextFiles = @($repositoryTextFiles | Sort-Object FullName -Unique)
+foreach ($textFile in $repositoryTextFiles) {
+    Test-StrictUtf8 $textFile $repositoryRoot
+}
+foreach ($scriptFile in @($repositoryTextFiles | Where-Object { $_.Extension -eq '.ps1' })) {
+    Test-PowerShellSyntax $scriptFile $repositoryRoot
 }
 
 foreach ($skillName in $expectedSkills) {

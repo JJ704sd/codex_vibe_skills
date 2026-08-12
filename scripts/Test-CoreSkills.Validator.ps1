@@ -3,7 +3,6 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$validatorPath = Join-Path $repositoryRoot 'scripts\Test-CoreSkills.ps1'
 $temporaryParent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $temporaryRoot = Join-Path $temporaryParent ('codex-vibe-skills-validator-tests-' + [guid]::NewGuid().ToString('N'))
 $errors = [System.Collections.Generic.List[string]]::new()
@@ -11,12 +10,9 @@ $errors = [System.Collections.Generic.List[string]]::new()
 function New-TestFixture([string]$Name) {
     $fixtureRoot = Join-Path $temporaryRoot $Name
     New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
-    foreach ($path in @('README.md', 'docs', 'skills')) {
+    foreach ($path in @('.gitattributes', '.github', 'LICENSE', 'README.md', 'docs', 'scripts', 'skills')) {
         Copy-Item -Recurse -LiteralPath (Join-Path $repositoryRoot $path) -Destination $fixtureRoot
     }
-    $fixtureScripts = Join-Path $fixtureRoot 'scripts'
-    New-Item -ItemType Directory -Path $fixtureScripts | Out-Null
-    Copy-Item -LiteralPath $validatorPath -Destination $fixtureScripts
     return $fixtureRoot
 }
 
@@ -79,6 +75,41 @@ try {
     $skillText = $skillText -replace 'A failed `gh auth status` in one identity is not sufficient evidence that authentication is invalid\.', 'Treat the authentication result as conclusive.'
     [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
     Assert-ValidatorResult 'missing credential-context contract' 1 (Invoke-FixtureValidator $missingCredentialContext) 'credential-context contract missing'
+
+    $mutableAction = New-TestFixture 'mutable-workflow-action'
+    $workflowPath = Join-Path $mutableAction '.github\workflows\validate.yml'
+    $workflowText = Get-Content -Raw -Encoding UTF8 -LiteralPath $workflowPath
+    $workflowText = $workflowText -replace 'actions/checkout@[0-9a-f]{40}', 'actions/checkout@v6'
+    [IO.File]::WriteAllText($workflowPath, $workflowText, [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'mutable workflow action' 1 (Invoke-FixtureValidator $mutableAction) 'external action is not pinned to a full commit SHA'
+
+    $writePermission = New-TestFixture 'write-enabled-workflow'
+    $workflowPath = Join-Path $writePermission '.github\workflows\validate.yml'
+    $workflowText = Get-Content -Raw -Encoding UTF8 -LiteralPath $workflowPath
+    $workflowText = $workflowText -replace 'contents: read', 'contents: write'
+    [IO.File]::WriteAllText($workflowPath, $workflowText, [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'write-enabled workflow' 1 (Invoke-FixtureValidator $writePermission) 'Validation workflow grants write permission'
+
+    $orphanResource = New-TestFixture 'orphan-skill-resource'
+    $orphanPath = Join-Path $orphanResource 'skills\tdd\references\orphan.md'
+    [IO.File]::WriteAllText($orphanPath, "# Orphan`n", [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'orphan skill resource' 1 (Invoke-FixtureValidator $orphanResource) 'resource is not linked directly from SKILL\.md'
+
+    $escapingLink = New-TestFixture 'escaping-relative-link'
+    $readmePath = Join-Path $escapingLink 'README.md'
+    [IO.File]::AppendAllText($readmePath, "`n[escape](../outside.md)`n", [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'escaping relative link' 1 (Invoke-FixtureValidator $escapingLink) 'Relative link escapes repository root'
+
+    $invalidPowerShell = New-TestFixture 'invalid-powershell-resource'
+    $probePath = Join-Path $invalidPowerShell 'skills\diagnosing-bugs\scripts\Test-WindowsGitHubAuthContext.ps1'
+    [IO.File]::AppendAllText($probePath, "`nif (`n", [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'invalid PowerShell resource' 1 (Invoke-FixtureValidator $invalidPowerShell) 'Invalid PowerShell syntax'
+
+    $invalidUtf8 = New-TestFixture 'invalid-utf8-resource'
+    $referencePath = Join-Path $invalidUtf8 'skills\tdd\references\tests.md'
+    $referenceBytes = [IO.File]::ReadAllBytes($referencePath)
+    [IO.File]::WriteAllBytes($referencePath, [byte[]]($referenceBytes + [byte[]](0xC3, 0x28)))
+    Assert-ValidatorResult 'invalid UTF-8 resource' 1 (Invoke-FixtureValidator $invalidUtf8) 'Text file is not valid UTF-8'
 } finally {
     $resolvedTemporaryRoot = [IO.Path]::GetFullPath($temporaryRoot)
     $expectedPrefix = $temporaryParent.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar + 'codex-vibe-skills-validator-tests-'

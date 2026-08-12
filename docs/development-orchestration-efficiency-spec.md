@@ -29,7 +29,7 @@
 | [LangGraph workflows](https://docs.langchain.com/oss/python/langgraph/workflows-agents) / [persistence](https://docs.langchain.com/oss/python/langgraph/persistence) | 条件边、并行节点、orchestrator-worker、evaluator-optimizer、持久化与 human-in-the-loop | graph 只表达真实依赖；客观 evaluator 决定回路；长迁移在安全阶段做 checkpoint |
 | [Microsoft AutoGen GraphFlow](https://microsoft.github.io/autogen/dev/user-guide/agentchat-user-guide/graph-flow.html) / [teams](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/teams.html) / [state](https://microsoft.github.io/autogen/dev/user-guide/agentchat-user-guide/tutorial/state.html) | 官方建议简单任务先用单 agent；GraphFlow 支持顺序、并行、条件和带退出条件的循环；team 可保存/恢复状态 | 默认线性执行；复杂任务才升级到结构化编排；停止条件与状态一致性优先于并行数 |
 | [OpenHands stuck detector](https://docs.openhands.dev/sdk/guides/agent-stuck-detector) / [skills](https://docs.openhands.dev/overview/skills) | 检测重复 action-observation、重复错误、交替模式和上下文错误；skills 按 discovery/invocation/resources 渐进加载 | 引入 no-progress/stuck guard；上下文按需披露；skill 正文继续保持小而专注 |
-| [mini-SWE-agent](https://github.com/SWE-agent/mini-swe-agent) | 简单线性 history、独立动作、显式 step/cost limit 和默认确认模式 | 不为编排本身增加层级；副作用前保留确认门；预算是停止/降级信号而非完成证据 |
+| [mini-SWE-agent control flow](https://mini-swe-agent.com/latest/advanced/control_flow/) / [interactive mode](https://mini-swe-agent.com/latest/usage/mini/) | 简单线性 history、独立动作、显式 step/cost limit 和默认确认模式 | 不为编排本身增加层级；副作用前保留确认门；预算是停止/降级信号而非完成证据 |
 | [SWE-agent ACI](https://swe-agent.com/latest/background/aci/) | 编辑时立即 lint、限制单次文件视图、搜索结果保持精简 | 把快速静态检查放到最近的编辑回路；向下游传递定位结果而非完整探索日志 |
 
 上述项目也说明并行重试、多 agent 竞争和通用 critic 可能显著增加成本，且 experimental API 会变化。本仓库只保留不依赖特定框架、能由现有 skill 验证的稳定原则。

@@ -25,3 +25,7 @@ jobs:
       - name: Test validator behavior
         shell: cmd
         run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Test-CoreSkills.Validator.ps1
+
+      - name: Test Windows GitHub auth probe behavior
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Test-WindowsGitHubAuthContext.Validator.ps1
