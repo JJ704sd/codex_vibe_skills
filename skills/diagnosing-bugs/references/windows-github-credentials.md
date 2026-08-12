@@ -14,8 +14,9 @@ Use this procedure only when Git or GitHub CLI behavior differs across Windows e
 
 1. Pin the repository, exact failing command, timestamp, shell identity, executable paths, and whether the action ran in a sandbox, service, ordinary terminal, or elevated terminal.
 2. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-WindowsGitHubAuthContext.ps1 -RepositoryPath <repo>` in the failing context. This bypass is process-local and must not change the machine or user execution policy. Preserve the redacted JSON and exit status.
-3. If authentication fails and another authorized context may own the credential, request approval and run the same read-only probe there once. Do not ask the user to log in again until this comparison is complete.
-4. Classify the result:
+3. Require a discovered Git executable and `git_repository_valid: true` before comparing authentication. If the repository preflight fails, correct only the path or execution context and rerun; do not classify it as an invalid credential or credential-visibility boundary.
+4. If authentication fails and another authorized context may own the credential, request approval and run the same read-only probe there once. Do not ask the user to log in again until this comparison is complete.
+5. Classify the result:
 
    | Default context | Authorized comparison | Classification | Next action |
    | --- | --- | --- | --- |
@@ -24,9 +25,9 @@ Use this procedure only when Git or GitHub CLI behavior differs across Windows e
    | failed | failed | authentication likely invalid or absent | ask the user to authenticate once in the context intended for Git network operations, then rerun both probes |
    | authenticated | failed | contexts use different stores or configuration | keep the working authenticated context; do not migrate credentials without explicit authorization |
 
-5. After a successful comparison, verify the external identity's Git channel separately from `gh`. Use `git -c safe.directory=<absolute-repo> -C <repo> ls-remote --exit-code origin <explicit-ref>` to confirm the remote and ref, but treat success on a public repository as reachability evidence only, not proof of write authentication. A successful `gh auth status` also does not prove the Git credential helper can push.
-6. Before `push` or PR creation, separately confirm scope, authorization, remote, branch, and the full commit SHA. In the credential-owning context, preserve the configured Git Credential Manager and use `git ... push --dry-run origin <verified-sha>:<explicit-ref>` as the write-channel preflight; do not set `GCM_INTERACTIVE=Never` when that would block the approved keyring flow. Then push the same verified SHA to the explicit branch ref without `-u` or `--force`, and use `ls-remote --exit-code` to prove the remote ref equals that SHA. Do not let an external identity rewrite local upstream configuration merely to publish.
-7. Report identities, redacted auth states, credential-channel mismatch, exact context used for each mutation, remote SHA verification, and remaining uncertainty.
+6. After a successful comparison, verify the external identity's Git channel separately from `gh`. Use `git -c safe.directory=<absolute-repo> -C <repo> ls-remote --exit-code origin <explicit-ref>` to confirm the remote and ref, but treat success on a public repository as reachability evidence only, not proof of write authentication. A successful `gh auth status` also does not prove the Git credential helper can push.
+7. Before `push` or PR creation, separately confirm scope, authorization, remote, branch, and the full commit SHA. In the credential-owning context, preserve the configured Git Credential Manager and use `git ... push --dry-run origin <verified-sha>:<explicit-ref>` as the write-channel preflight; do not set `GCM_INTERACTIVE=Never` when that would block the approved keyring flow. Then push the same verified SHA to the explicit branch ref without `-u` or `--force`, and use `ls-remote --exit-code` to prove the remote ref equals that SHA. Do not let an external identity rewrite local upstream configuration merely to publish.
+8. Report identities, redacted auth states, credential-channel mismatch, exact context used for each mutation, remote SHA verification, and remaining uncertainty.
 
 ## Safe execution pattern
 

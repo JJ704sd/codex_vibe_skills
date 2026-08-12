@@ -31,11 +31,19 @@
   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-CoreSkills.Validator.ps1
   ```
 
-GitHub Actions 会在 push、pull request 和手动触发时运行上述两层自检；校验任务仅授予仓库内容只读权限。
+- Windows GitHub 凭据探针行为测试：
 
-每个技能包含最小 `SKILL.md`、桌面端 UI 元数据 `agents/openai.yaml`，以及仅在需要时加载的 `references/`。
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-WindowsGitHubAuthContext.Validator.ps1
+  ```
 
-当 Codex 沙箱与 Administrator 终端的 `gh auth status` 结论不一致时，`diagnosing-bugs` 会先执行脱敏的双上下文探针，区分 token 失效与 Windows Keyring 可见性边界，再决定是否需要重新登录或在获批上下文执行 Git 网络命令。
+GitHub Actions 会在 push、pull request 和手动触发时运行上述三层自检；校验任务仅授予仓库内容只读权限。
+
+若直接运行系统 `skill-creator` 的 `quick_validate.py`，Windows 中文区域设置下使用 `python -X utf8 <path-to-quick_validate.py> <skill-directory>`，避免 Python 按系统 ANSI 编码读取 UTF-8 技能文件。
+
+每个技能包含最小 `SKILL.md` 和桌面端 UI 元数据 `agents/openai.yaml`；仅在需要时附带并加载 `references/`、`scripts/` 或 `assets/`。
+
+当 Codex 沙箱与 Administrator 终端的 `gh auth status` 结论不一致时，`diagnosing-bugs` 会先验证仓库路径和 Git 上下文，再执行脱敏的双上下文探针，区分 token 失效与 Windows Keyring 可见性边界，最后决定是否需要重新登录或在获批上下文执行 Git 网络命令。
 
 ## Git 与 CI/CD 职责
 
@@ -81,7 +89,7 @@ Graph、loop 和 subagent 是现有 8 个 skills 内部按场景使用的执行�
 
 ## 安装
 
-将需要的完整技能目录复制到 Codex 的用户 skills 目录。不要只复制 `SKILL.md`；`agents/` 和 `references/` 属于技能的一部分。
+将需要的完整技能目录复制到 Codex 的用户 skills 目录。不要只复制 `SKILL.md`；`agents/` 以及存在的 `references/`、`scripts/` 或 `assets/` 都属于技能的一部分。
 
 Codex 通常会自动发现技能变更；若桌面端技能选择器未刷新，请重启 Codex。
 
