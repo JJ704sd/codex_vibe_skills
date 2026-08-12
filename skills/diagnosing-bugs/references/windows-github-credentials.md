@@ -24,8 +24,9 @@ Use this procedure only when Git or GitHub CLI behavior differs across Windows e
    | failed | failed | authentication likely invalid or absent | ask the user to authenticate once in the context intended for Git network operations, then rerun both probes |
    | authenticated | failed | contexts use different stores or configuration | keep the working authenticated context; do not migrate credentials without explicit authorization |
 
-5. After a successful comparison, run the smallest read-only remote check needed. Before `push` or PR creation, separately confirm scope, authorization, branch, commit, and repository.
-6. Report identities, redacted auth states, credential-channel mismatch, exact context used for each mutation, and remaining uncertainty.
+5. After a successful comparison, verify the external identity's Git channel separately from `gh`. For an HTTPS remote, disable prompts for the command and run `git -c safe.directory=<absolute-repo> -C <repo> ls-remote origin HEAD`. A successful `gh auth status` does not prove the Git credential helper can reach the repository.
+6. Before `push` or PR creation, separately confirm scope, authorization, remote, branch, and the full commit SHA. Prefer pushing the verified SHA to an explicit branch ref without `-u` or `--force`, then use `ls-remote --exit-code` to prove the remote ref equals that SHA. Do not let an external identity rewrite local upstream configuration merely to publish.
+7. Report identities, redacted auth states, credential-channel mismatch, exact context used for each mutation, remote SHA verification, and remaining uncertainty.
 
 ## Safe execution pattern
 
@@ -33,5 +34,6 @@ Use this procedure only when Git or GitHub CLI behavior differs across Windows e
 - Use the approved external identity only for commands that need its credential store, such as `git fetch`, `git push`, or `gh pr view`.
 - Prefer a configured GitHub connector for PR creation when it is already authorized, but verify the pushed branch and returned PR URL independently.
 - Treat a reusable approval prefix as authorization for the matching command shape, not as permission for unrelated Git or filesystem mutations.
+- Stop rather than retrying with force, rebasing, branch-rule changes, or broader credentials when the explicit push is rejected as non-fast-forward, protected, unauthorized, or pointed at an unexpected remote.
 
 Stop on permission denial, an unexpected identity, a different repository/remote, secret-bearing output that cannot be redacted, or any request to weaken credential isolation.

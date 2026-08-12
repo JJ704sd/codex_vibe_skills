@@ -41,4 +41,6 @@ Run focused tests, relevant static checks, and the broadest safe project checks 
 
 When the task has relevant remote checks and the published commit changes, treat prior remote check conclusions as stale and identify the checks that must run again. Local proof does not authorize a push or deployment; each still requires separate authorization.
 
+Keep preservation proof in a stable local execution context. If a credential-dependent Git command needs another approved identity, run only that named command there and record the identity and revision; do not change global credential helpers, ACLs, repository ownership, or `safe.directory` merely to unify contexts. Recheck Git state before and after the external command; keep the credential-dependent Git command separately authorized from the refactor.
+
 Report the preserved invariants, baseline, structural transformations, evidence after each phase, final checks, and any behavior not covered by proof.

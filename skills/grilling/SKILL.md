@@ -41,6 +41,8 @@ After two consecutive rounds that neither close, narrow, nor reorder a frontier 
 
 Only when the current decision depends on delivery state, inspect branch, PR, required-check, environment, and deployment state before asking; do not ask the user to recite discoverable Git or CI facts. Ask only for release policy, risk acceptance, rollout timing, or business approval that evidence cannot determine. A discussion or answer never implies authorization to commit, push, merge, rerun, approve, or deploy.
 
+When authentication results differ across execution identities, treat that mismatch as a discoverable fact, not a user decision. With approval, run one authorized read-only credential probe in the likely credential-owning context before asking the user to authenticate again. Ask only for an undiscoverable choice such as whether that identity may perform a named network mutation; never ask the user to diagnose credential-store visibility.
+
 ## Finish deliberately
 
 Stop when the frontier is empty or the remaining uncertainty is explicitly accepted. Summarize confirmed decisions, accepted assumptions, unresolved risks, and the next recommended action, then ask the user to confirm the shared understanding.

@@ -21,6 +21,8 @@ Build a requirements-files-checks coverage map over the pinned change set. For a
 
 Inspect delivery evidence only when the pinned diff, governing spec, or requested evidence makes delivery behavior relevant. Then include changed workflows, action revisions, permissions, scripts, required checks, and observed check results in the coverage map. Verify check results belong to the pinned head SHA and relevant event; green CI is supporting evidence, not proof of Spec completeness or unexercised deployment safety. Review remains read-only: do not rerun checks, push fixes, approve deployments, or merge unless separately requested.
 
+If PR or check evidence is inaccessible in the current identity, report an evidence gap, not a defect or proof that authentication is invalid. With approval, collect read-only remote metadata in the approved credential-owning context, then record the execution identity and head SHA with the evidence. Do not copy credentials into the review context or let evidence collection authorize a mutation.
+
 Use a risk-first review pass and iteration budget: inspect high-impact requirements, trust boundaries, shared state, and cross-file behavior before low-risk areas. Expand the review only when new evidence or a material coverage gap justifies the cost. A budget stop is not a clean review; report every unreviewed area as a residual verification gap.
 
 ## Find governing sources

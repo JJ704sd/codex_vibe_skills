@@ -54,6 +54,23 @@ Git 管理和 CI/CD 不是第 9 个独立 skill，而是按证据类型和授权
 
 共同硬边界：读取状态和日志通常是只读证据；commit、push、建 PR、rerun/cancel、merge、环境批准和 deploy 是彼此独立的写操作，必须分别处于当前请求的授权范围内。任何绿色检查都不自动授予下一项操作的权限。
 
+### Windows 凭据上下文分离
+
+仅当 Git/GitHub 认证结果确实因 Windows 执行身份、沙箱或服务边界而不一致时启用：
+
+| Skill | 按需职责 |
+| --- | --- |
+| `grilling` | 把身份间认证差异当可发现事实，仅询问是否授权某个身份执行明确网络动作 |
+| `codebase-design` | 将执行身份、凭据存储可见性、仓库所有权与命令放置建模为信任边界 |
+| `tdd` | 保持本地 red/green；认证探针不能充当测试证据 |
+| `refactoring-safely` | 保持本地保存性证明，只把获批的凭据相关 Git 命令放到外部身份 |
+| `evolving-contracts` | 身份、凭据存储、helper、secret 注入或 runner 认证改变时作为契约迁移 |
+| `diagnosing-bugs` | 先比较脱敏身份探针，区分认证无效与 credential-visibility boundary |
+| `review-code-against-spec` | 当前身份读不到 PR/check 时记录 evidence gap，并在获批身份只读取证 |
+| `resolving-merge-conflicts` | index/HEAD/worktree 保持单一身份写入，凭据网络命令独立执行 |
+
+不复制或导出 token，不把凭据写入仓库或全局环境，不为统一身份而修改 ACL、仓库所有权、全局 credential helper 或全局 `safe.directory`。对已经核实的仓库，跨所有者外部命令优先使用单命令 `git -c safe.directory=<absolute-repo>`；这只解决该命令的仓库信任判断，不改变认证状态或后续操作授权。
+
 ## 开发执行提效
 
 Graph、loop 和 subagent 是现有 8 个 skills 内部按场景使用的执行策略，不是第 9 个独立 skill（not a ninth skill）。复杂任务还可使用固定输入的 context capsule、安全 checkpoint、客观 evaluator gate、预算与 stuck guard；小任务保持单 agent 线性执行。

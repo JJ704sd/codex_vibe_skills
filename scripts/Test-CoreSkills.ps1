@@ -174,6 +174,34 @@ $gitCiContracts = @{
     )
 }
 
+$credentialContextContracts = @{
+    'grilling' = @(
+        @{ Label = 'credential mismatch is discoverable evidence'; Patterns = @('(?i)authentication results differ across execution identities', '(?i)discoverable fact, not a user decision', '(?i)authorized read-only credential probe', '(?i)before asking the user to authenticate') }
+    )
+    'codebase-design' = @(
+        @{ Label = 'credential context as trust boundary'; Patterns = @('(?i)execution identity, credential-store visibility, repository ownership, and command placement as trust boundaries', '(?i)credentials in their owning store', '(?i)only credential-dependent commands in an approved context', '(?i)global safe-directory exceptions') }
+    )
+    'tdd' = @(
+        @{ Label = 'local loop isolated from credential context'; Patterns = @('(?i)red-green-refactor in the local execution context', '(?i)gh auth status.{0,80}is not test evidence', '(?i)credential-context diagnosis to `?\$diagnosing-bugs`?', '(?i)do not copy tokens') }
+    )
+    'refactoring-safely' = @(
+        @{ Label = 'preservation proof isolated from credential context'; Patterns = @('(?i)preservation proof in a stable local execution context', '(?i)do not change global credential helpers, ACLs, repository ownership, or `?safe\.directory`?', '(?i)credential-dependent Git command separately authorized') }
+    )
+    'evolving-contracts' = @(
+        @{ Label = 'credential topology as explicit contract'; Patterns = @('(?i)execution identities, credential stores and helpers, secret injection, repository ownership, and runner authentication as contracts', '(?i)without copying tokens or weakening ACLs', '(?i)store migration or global configuration change.{0,80}separately authorized phase') }
+    )
+    'diagnosing-bugs' = @(
+        @{ Label = 'identity comparison before reauthentication'; Patterns = @('(?i)failed `?gh auth status`? in one identity is not sufficient evidence', '(?i)authorized comparison identity', '(?i)only credential-dependent network commands use the approved context', '(?i)process-local `?git -c safe\.directory=<absolute-repo>`?') },
+        @{ Label = 'Git channel and fixed-SHA publication proof'; Patterns = @('(?i)successful `?gh auth status`? does not prove the Git credential helper', '(?i)ls-remote origin HEAD', '(?i)pushing the verified SHA to an explicit branch ref without `?-u`? or `?--force`?', '(?i)prove the remote ref equals that SHA') }
+    )
+    'review-code-against-spec' = @(
+        @{ Label = 'read-only remote evidence through credential owner'; Patterns = @('(?i)PR or check evidence is inaccessible in the current identity', '(?i)evidence gap, not a defect', '(?i)read-only remote metadata in the approved credential-owning context', '(?i)record the execution identity and head SHA') }
+    )
+    'resolving-merge-conflicts' = @(
+        @{ Label = 'single identity owns conflict Git state'; Patterns = @('(?i)index, HEAD, and worktree mutations under one authorized execution identity', '(?i)do not alternate identities', '(?i)credential-dependent network commands outside conflict resolution', '(?i)do not change repository ownership, credential helpers, or global `?safe\.directory`?') }
+    )
+}
+
 if (-not (Test-Path -LiteralPath $SkillsRoot -PathType Container)) {
     throw "Skills root does not exist: $SkillsRoot"
 }
@@ -316,6 +344,18 @@ foreach ($skillName in $expectedSkills) {
     foreach ($rule in $gitCiContracts[$skillName]) {
         if (-not (Test-ContractRule $skillText $rule.Patterns)) {
             Add-ValidationError "${skillName}: Git/CI contract missing: $($rule.Label)"
+        }
+    }
+    $credentialContractText = $skillText
+    if ($skillName -eq 'diagnosing-bugs') {
+        $credentialReference = Join-Path $skillRoot 'references\windows-github-credentials.md'
+        if (Test-Path -LiteralPath $credentialReference -PathType Leaf) {
+            $credentialContractText += "`n" + (Get-Content -Raw -Encoding UTF8 -LiteralPath $credentialReference)
+        }
+    }
+    foreach ($rule in $credentialContextContracts[$skillName]) {
+        if (-not (Test-ContractRule $credentialContractText $rule.Patterns)) {
+            Add-ValidationError "${skillName}: credential-context contract missing: $($rule.Label)"
         }
     }
 

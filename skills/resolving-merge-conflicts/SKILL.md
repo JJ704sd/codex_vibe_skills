@@ -18,6 +18,8 @@ Subagents may analyze independent conflicts read-only from one pinned Git state 
 
 If conflict resolution changes a workflow or a commit with relevant remote checks, prior CI conclusions are stale; identify which checks must run against the resolved head. Continue authorization does not imply publication: push and deployment remain separately authorized.
 
+Keep index, HEAD, and worktree mutations under one authorized execution identity; do not alternate identities while resolving or continuing. Keep credential-dependent network commands outside conflict resolution and run only the separately authorized command in the approved credential context. Do not change repository ownership, credential helpers, or global `safe.directory` to make identities interchangeable.
+
 Do not create an extra commit, amend unrelated history, push, or clean the worktree unless the user separately requests it or the already-authorized Git operation strictly requires it.
 
 Report resolved files, intent decisions, checks run, remaining conflicts, preserved unrelated changes, and whether the operation was continued.
