@@ -1,4 +1,4 @@
 interface:
   display_name: "Evolve Contracts and Dependencies"
-  short_description: "Migrate contracts, data, and dependencies safely"
-  default_prompt: "Use $evolving-contracts to migrate this contract, data shape, or dependency with explicit compatibility evidence."
+  short_description: "Migrate contracts, dependencies, and delivery safely"
+  default_prompt: "Use $evolving-contracts to migrate this contract, data shape, dependency, or CI/CD workflow with explicit compatibility evidence."

@@ -1,6 +1,6 @@
 ---
 name: codebase-design
-description: Design or compare interfaces, seams, adapters, module boundaries, and security-sensitive trust boundaries for a selected part of a codebase. Use when the public contract, test surface, dependency direction, design alternatives, or security invariants remain unresolved; do not use for codebase-wide architecture scans or straightforward implementation of an already settled design.
+description: Design or compare interfaces, seams, adapters, module boundaries, CI/CD release paths, and security-sensitive trust boundaries for a selected part of a codebase. Use when the public contract, test surface, dependency direction, delivery design, alternatives, or security invariants remain unresolved; do not use for codebase-wide architecture scans or straightforward implementation of an already settled design.
 ---
 
 # Codebase Design
@@ -29,6 +29,8 @@ Design substantial behavior behind a small, explicit interface at a clean seam.
 10. Report one final recommendation in the response, covering the contract, dependency strategy, migration path, leverage, locality, trade-offs, verification seams, and unresolved risks. Write a durable design only when the user requests it and identifies or approves the destination.
 
 For a consequential design, independent subagents may derive alternatives from the same context capsule: pinned evidence, caller constraints, relevant paths, permitted read/write scope, expected evidence, and stop budget. One integrator compares them against the constraints, resolves conflicts from primary evidence, and owns the final recommendation. Do not use majority vote or let workers concurrently edit one design draft.
+
+Apply delivery-specific analysis only when the requested design includes or changes a CI/CD workflow or release path; otherwise keep the ordinary module-design workflow. When a CI/CD workflow or release path is part of the selected design, include its triggers, permissions, credentials, artifacts, environments, concurrency, required-check names, branch-protection expectations, and rollback in the dependency and trust-boundary graph. Derive least-privilege permissions, immutable action revisions, secret isolation for untrusted changes, artifact provenance, environment approval, concurrency control, and recovery evidence at the closest stable seam. Separate untrusted fork builds from trusted promotion and deployment: environment approval alone does not make a fork-produced artifact trustworthy; verify its provenance, integrity, source ref, and policy eligibility before promotion. Treat workflow implementation, repository settings, pushes, and deployments as later authorized actions, not as implicit design output.
 
 ## Guardrails
 

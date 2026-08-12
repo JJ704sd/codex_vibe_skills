@@ -46,4 +46,6 @@ If the task is explicitly behavior-preserving restructuring rather than new beha
 
 Run the focused test on every cycle. Regularly run the smallest relevant test group plus applicable static checks. At completion, run broader safe project checks in proportion to the change.
 
+Only when repository CI exists and the behavior or requested change depends on it, map the focused and broad local commands to the repository CI jobs and required checks without making CI the inner development loop. A CI-only failure after push is not the first red: reproduce it locally or in an authorized equivalent environment before changing behavior. Record which checks are local equivalents and which remain remote-only. Commit, push, PR creation, rerun, merge, and deployment remain separate authorized actions; a green loop grants none of them.
+
 Report the seam, behaviors added, red evidence, checks run, and residual risk. Do not claim TDD if the test never demonstrated the intended red state.

@@ -1,6 +1,6 @@
 # Codex 通用代码核心 Skills 规范
 
-状态：第三轮精简，已实施并验证
+状态：第四轮 Git/CI/CD 场景同步，已实施并验证
 日期：2026-08-12
 参考源：`D:\quality_tests_skills` 与现有工作区
 
@@ -59,6 +59,23 @@
 merge/rebase 冲突中 ──> resolving-merge-conflicts
 ```
 
+### 4.1 Git 与 CI/CD 场景映射
+
+Git/CI/CD 不新增元路由 skill，而是沿现有证据逻辑分布。仅当仓库存在相关 workflow、required checks、制品或部署契约，且当前任务会读取、影响或改变它们时启用；否则保持原 skill 的基础证据链。
+
+| 场景 | 归属 | 完成证据与授权边界 |
+| --- | --- | --- |
+| 发布策略、风险接受、上线时机未定 | `grilling` | 先读取分支、PR、required checks、环境和部署状态；只询问不可发现的业务判断 |
+| 设计或重构发布流水线 | `codebase-design` | 触发器、最小权限、凭据/secret、fork 制品晋级、环境、并发、回滚与验证 seam |
+| 已知行为的 test-first 实现 | `tdd` | 本地 red/green 与 CI job 映射；CI-only 失败不能替代第一条 red |
+| 保持行为的内部重构 | `refactoring-safely` | required checks 与本地等价命令保持；门禁变更移交 `evolving-contracts` |
+| action、runner、权限、缓存、制品或部署接口演进 | `evolving-contracts` | 固定版本与兼容矩阵、不可变 action revision、required-check 名称、混合态和恢复证据 |
+| CI/CD 失败根因未知 | `diagnosing-bugs` | 固定 workflow/run/attempt/head SHA/event/job/runner；日志脱敏并做单变量实验 |
+| 固定 diff 或 PR 待验收 | `review-code-against-spec` | workflow、脚本、权限、action SHA 和属于固定 head SHA 的检查结果进入 coverage map |
+| merge/rebase 中 workflow 冲突 | `resolving-merge-conflicts` | 重建两侧触发器、权限、表达式、环境和 required-check 语义；解析后旧检查失效 |
+
+共享不变量：读取状态和日志默认只读；commit、push、PR 创建、检查 rerun/cancel、merge、环境批准和 deploy 是独立副作用，不能互相推导授权。绿色 CI 只证明已执行的提交、事件和矩阵单元，不证明 Spec 完整、未执行环境安全或部署获批。
+
 硬边界：
 
 - `grilling` 不询问可从仓库或工具发现的事实，也不隐式开始实现。
@@ -93,6 +110,11 @@ merge/rebase 冲突中 ──> resolving-merge-conflicts
 | “慢接口尚未复现或建立基线” | 仍先进入诊断分支 |
 | “按 AGENTS.md 和原始 spec 审查 diff” | `review-code-against-spec` |
 | “rebase 卡在冲突，保留双方意图并继续” | `resolving-merge-conflicts` |
+| “设计允许 fork PR、产出制品并经批准部署的最小权限 Actions 流水线” | `codebase-design`；设计不隐含实施或部署授权 |
+| “升级 runner 和 action，同时保持旧分支 required checks 可用” | `evolving-contracts`；验证新旧工作流混合态 |
+| “同一提交只在 windows-latest 失败，原因未知” | `diagnosing-bugs`；固定 run/attempt/head SHA 后诊断 |
+| “PR 检查全绿，核实 workflow 权限和验收条件是否完整” | `review-code-against-spec`；绿色结果仅作支持证据 |
+| “workflow 冲突已解决，直接沿用冲突前的绿灯结果” | 拒绝；`resolving-merge-conflicts` 应把旧检查视为失效 |
 | “实现这个明确的小改动” | 不触发 skill，使用默认能力 |
 
 ## 7. 完成标准
@@ -107,4 +129,6 @@ merge/rebase 冲突中 ──> resolving-merge-conflicts
 
 从 11 项压缩到 8 项：删除 `threat-modeling`、`optimizing-performance`、`upgrading-dependencies` 独立入口，关键规则分别下沉到 `codebase-design`、`diagnosing-bugs`、`evolving-contracts` 的按需 reference。没有删除关键安全、测量或兼容约束，也没有增加元路由层。
 
-最终验证结果：仓库验证器与系统 `quick_validate.py` 均为 8/8 通过，`git diff --check` 通过；设计/安全、故障/性能、契约/依赖三组合并点的独立前向检查均能正确选择分支、保留授权边界并产出所需证据。
+第四轮把 Git 管理与 CI/CD 作为横切证据同步到全部 8 项：设计与契约 skill 管理流水线边界和兼容性，诊断与审查 skill 固定远端证据，TDD 与重构 skill 对齐本地验证和 required checks，冲突 skill 使旧检查失效，`grilling` 只收敛不可发现的发布判断。所有远端写操作继续保持独立授权。
+
+最终验证结果：仓库验证器与系统 `quick_validate.py` 均为 8/8 通过，`git diff --check` 通过；设计/安全、故障/性能、契约/依赖三组合并点，以及 Git/CI/CD 条件触发的独立前向检查，均能正确选择分支、保留授权边界并产出所需证据。普通模块设计、TDD、重构、代码审查和非 workflow 冲突不会被迫追加 CI/CD 工作。

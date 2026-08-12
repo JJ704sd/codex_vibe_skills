@@ -19,6 +19,8 @@ Capture the effective endpoints, commit context when applicable, changed-file li
 
 Build a requirements-files-checks coverage map over the pinned change set. For a large review, run Standards and Spec as independent read-only workers only in the same current frontier when saved critical-path time exceeds dispatch, rereading, and fan-in cost; give both the same capsule of endpoints, raw diff, governing sources, and exclusions. At fan-in, a single report writer verifies the input is unchanged, resolves conflicting evidence from primary sources, deduplicates findings, and fills coverage gaps. A changed diff invalidates worker conclusions.
 
+Inspect delivery evidence only when the pinned diff, governing spec, or requested evidence makes delivery behavior relevant. Then include changed workflows, action revisions, permissions, scripts, required checks, and observed check results in the coverage map. Verify check results belong to the pinned head SHA and relevant event; green CI is supporting evidence, not proof of Spec completeness or unexercised deployment safety. Review remains read-only: do not rerun checks, push fixes, approve deployments, or merge unless separately requested.
+
 Use a risk-first review pass and iteration budget: inspect high-impact requirements, trust boundaries, shared state, and cross-file behavior before low-risk areas. Expand the review only when new evidence or a material coverage gap justifies the cost. A budget stop is not a clean review; report every unreviewed area as a residual verification gap.
 
 ## Find governing sources

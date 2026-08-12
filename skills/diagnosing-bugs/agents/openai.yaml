@@ -1,4 +1,4 @@
 interface:
   display_name: "Diagnose and Optimize"
-  short_description: "Diagnose failures, credential boundaries, and bottlenecks"
-  default_prompt: "Use $diagnosing-bugs to diagnose this failure, including environment-specific GitHub authentication, with reproducible evidence."
+  short_description: "Diagnose code, CI, credential, and performance failures"
+  default_prompt: "Use $diagnosing-bugs to diagnose this code, CI/CD, or environment-specific GitHub failure with reproducible evidence."

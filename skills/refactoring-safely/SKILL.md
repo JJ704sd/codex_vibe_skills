@@ -19,6 +19,8 @@ Preserve observable behavior while improving internal structure. Treat “no beh
 
 Run the smallest relevant existing checks before editing and record the baseline. A failing baseline is not green; isolate the failure or obtain an explicit comparison basis before attributing later results.
 
+Record required CI checks and their local equivalents only when the refactor can affect build, packaging, workflow, or deployment behavior. Otherwise use the normal preservation baseline without adding delivery work. Do not weaken, skip, or rewrite a CI gate merely to make the refactor green; changes to gates, action revisions, runner images, permissions, or required-check names are separate contract changes and belong in `$evolving-contracts`.
+
 Read [references/preservation-evidence.md](references/preservation-evidence.md) when tests are sparse, outputs are large, or the change is mechanical across many callers. Add characterization coverage only for important observable behavior not already protected. Do not freeze accidental internals merely to make the refactor feel safer.
 
 ## Change in reversible steps
@@ -36,5 +38,7 @@ Never weaken assertions, update expected outputs, or change public behavior mere
 ## Verify the whole claim
 
 Run focused tests, relevant static checks, and the broadest safe project checks proportionate to the blast radius. Compare externally meaningful artifacts before and after when tests alone cannot prove preservation.
+
+When the task has relevant remote checks and the published commit changes, treat prior remote check conclusions as stale and identify the checks that must run again. Local proof does not authorize a push or deployment; each still requires separate authorization.
 
 Report the preserved invariants, baseline, structural transformations, evidence after each phase, final checks, and any behavior not covered by proof.
