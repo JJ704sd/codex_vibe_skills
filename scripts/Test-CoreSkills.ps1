@@ -11,7 +11,9 @@ if ([string]::IsNullOrWhiteSpace($SkillsRoot)) {
 $expectedSkills = @(
     'codebase-design',
     'diagnosing-bugs',
+    'evolving-contracts',
     'grilling',
+    'refactoring-safely',
     'resolving-merge-conflicts',
     'review-code-against-spec',
     'tdd'

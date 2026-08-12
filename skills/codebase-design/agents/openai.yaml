@@ -1,4 +1,4 @@
 interface:
-  display_name: "Codebase Design"
-  short_description: "Shape interfaces, seams, and module boundaries"
-  default_prompt: "Use $codebase-design to design the public interface and dependency seams for this module."
+  display_name: "Codebase and Security Design"
+  short_description: "Design interfaces, dependencies, and trust boundaries"
+  default_prompt: "Use $codebase-design to design this module's interface, dependencies, and security boundaries."

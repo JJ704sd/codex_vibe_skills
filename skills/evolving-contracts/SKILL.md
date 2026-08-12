@@ -1,0 +1,34 @@
+---
+name: evolving-contracts
+description: Evolve APIs, events, schemas, persisted data, configuration, dependencies, frameworks, runtimes, or toolchains through explicit compatibility evidence and bounded transitions. Use when versions or representations must change while producers, consumers, data, or build environments may differ; do not use for purely internal refactors or an undecided target contract.
+---
+
+# Evolving Contracts and Dependencies
+
+Move a live contract or external dependency from one valid state to another without assuming every consumer, record, or environment changes atomically.
+
+## Define the change
+
+1. Read repository instructions, governing contracts, manifests, lockfiles, deployment topology, supported versions, ownership, and rollback expectations.
+2. Inventory readers, writers, validators, persisted forms, generated clients, manifests, workspace overrides, runtime constraints, CI/container versions, and repository-used dependency APIs as applicable.
+3. State the current and target forms or resolved versions, compatibility window, invariants, supported matrix, irreversible operations, and unrelated changes that are out of scope.
+4. Use `$codebase-design` first when the target public contract remains unresolved. Use `$refactoring-safely` when no mixed-version or external compatibility boundary exists.
+
+## Select evidence and transition
+
+For API, schema, data, event, or configuration changes, read [references/transition-patterns.md](references/transition-patterns.md) and default to:
+
+1. **Expand readers:** deploy readers that accept old and new forms without requiring or emitting the new form.
+2. **Migrate writers:** only after supported readers are proven compatible, emit the new form and migrate or backfill in bounded, idempotent, resumable batches. Use a versioned contract or adapter when old readers reject it.
+3. **Observe:** measure interoperability, migration failures, data reconciliation, and remaining legacy use.
+4. **Contract:** remove the old form only after evidence proves no required reader, writer, or record depends on it.
+
+For dependency, framework, runtime, or toolchain changes, read [references/dependency-upgrades.md](references/dependency-upgrades.md). Use exact-version official guidance, establish a frozen baseline, upgrade one dependency family or compatibility line at a time, and inspect the final resolved graph and lockfile churn.
+
+Do not choose “latest” reflexively, rely on rollout order as compatibility proof, or assume application rollback reverses destructive data changes.
+
+## Verify every state
+
+Test initial, intermediate mixed-version, and final states plus retries, partial failure, supported runtimes, packaging, integrations, and rollback or forward recovery as applicable. Keep destructive steps separately authorized and backed by a tested recovery mechanism.
+
+Use `$tdd` for settled behavior slices. Use `$diagnosing-bugs` for unclear migration or upgrade failures. Report the compatibility matrix, authoritative evidence, sequence, manifest/data changes, recovery path, checks, contraction condition, and residual risk.

@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: Implement known behavior or a verified bug fix through a stable public seam using red-green-refactor. Use when the user explicitly requests TDD or test-first work, or when a verified regression must be locked down before repair; use $diagnosing-bugs while the cause or expected behavior remains unknown.
+description: Implement known behavior or a verified bug fix through a stable public seam using red-green-refactor. Use when the user explicitly requests TDD or test-first work, or when a verified regression must be locked down before repair; use $diagnosing-bugs while the cause, workload, or expected behavior remains unknown.
 ---
 
 # Test-Driven Development
@@ -34,6 +34,8 @@ Do not write the entire test suite first or implement layer by layer. Let each c
 - Avoid speculative cases and abstractions beyond the current behavior.
 
 Read [references/tests.md](references/tests.md) when evaluating a test seam, expectation, or boundary substitute.
+
+If the task is explicitly behavior-preserving restructuring rather than new behavior, use `$refactoring-safely` for the preservation proof instead of inventing a red state.
 
 ## Verify and report
 

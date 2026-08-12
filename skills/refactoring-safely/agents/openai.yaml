@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refactoring Safely"
+  short_description: "Restructure code without changing behavior"
+  default_prompt: "Use $refactoring-safely to restructure this code while preserving observable behavior."
