@@ -1,6 +1,6 @@
 ---
 name: evolving-contracts
-description: Evolve APIs, events, schemas, persisted data, configuration, dependencies, frameworks, runtimes, or toolchains through explicit compatibility evidence and bounded transitions. Use when versions or representations must change while producers, consumers, data, or build environments may differ; do not use for purely internal refactors or an undecided target contract.
+description: Evolve APIs, events, schemas, persisted data, configuration, dependencies, frameworks, runtimes, toolchains, or CI/CD workflows through explicit compatibility evidence and bounded transitions. Use when versions or representations must change while producers, consumers, data, build environments, or delivery paths may differ; do not use for purely internal refactors or an undecided target contract.
 ---
 
 # Evolving Contracts and Dependencies
@@ -10,7 +10,7 @@ Move a live contract or external dependency from one valid state to another with
 ## Define the change
 
 1. Read repository instructions, governing contracts, manifests, lockfiles, deployment topology, supported versions, ownership, and rollback expectations.
-2. Inventory readers, writers, validators, persisted forms, generated clients, manifests, workspace overrides, runtime constraints, CI/container versions, and repository-used dependency APIs as applicable.
+2. Inventory readers, writers, validators, persisted forms, generated clients, manifests, workspace overrides, runtime constraints, CI/container versions, and repository-used dependency APIs as applicable. Treat CI/CD workflows, action versions, runner images, permissions, caches, artifacts, environments, and deployment interfaces as contracts only when they change or the transition depends on them.
 3. Build a producer-reader-storage-deployment dependency graph and a pinned compatibility matrix. Use them to identify phase gates, ownership, recovery paths, and safe batches.
 4. State the current and target forms or resolved versions, compatibility window, invariants, supported matrix, irreversible operations, and unrelated changes that are out of scope.
 5. Use `$codebase-design` first when the target public contract remains unresolved. Use `$refactoring-safely` when no mixed-version or external compatibility boundary exists.
@@ -25,6 +25,10 @@ For API, schema, data, event, or configuration changes, read [references/transit
 4. **Contract:** remove the old form only after evidence proves no required reader, writer, or record depends on it.
 
 For dependency, framework, runtime, or toolchain changes, read [references/dependency-upgrades.md](references/dependency-upgrades.md). Use exact-version official guidance, establish a frozen baseline, upgrade one dependency family or compatibility line at a time, and inspect the final resolved graph and lockfile churn.
+
+For delivery changes, and only then, record how old and new workflow paths coexist across branches, forks, reruns, environments, and in-flight releases. Pin third-party actions to reviewed immutable revisions; preserve least-privilege permissions, secret isolation, artifact provenance, required-check names and branch-protection expectations, environment approvals, concurrency semantics, and rollback or forward recovery. A successful workflow run proves only the exercised matrix cell, not compatibility of every state.
+
+When the change affects Git or delivery authentication, treat execution identities, credential stores and helpers, secret injection, repository ownership, and runner authentication as contracts. Prove old and new contexts separately without copying tokens or weakening ACLs. Make any credential-store migration or global configuration change a separately authorized phase with explicit rollback; a process-local command exception is not evidence that every context migrated.
 
 Do not choose “latest” reflexively, rely on rollout order as compatibility proof, or assume application rollback reverses destructive data changes.
 

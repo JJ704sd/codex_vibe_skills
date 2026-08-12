@@ -10,10 +10,15 @@ description: Resolve an in-progress Git merge or rebase conflict by reconstructi
 3. Resolve each hunk to preserve both intents when compatible. When intents conflict, follow the authorized merge goal and report the trade-off; do not invent unrelated behavior. If primary evidence and that goal still cannot uniquely determine the semantics, stop that path, request the minimum user decision, and do not stage it.
 4. If evidence suggests aborting, explain why and ask the user to decide. Never run `merge --abort`, `rebase --abort`, reset, or another destructive recovery step autonomously.
 5. Stage only resolved conflict paths with explicit path arguments. Never use a whole-tree add or include unrelated changes.
-6. Run the smallest relevant formatting, type, build, and test checks. Inspect `git diff --check`, the remaining unmerged paths, and the staged diff before continuing.
-7. Continue the merge or rebase only when completing the active operation is within the user's request. During a rebase, handle later conflicts one commit at a time.
+6. Apply CI/CD-specific reconstruction only for actual workflow or deployment configuration conflicts. Reconstruct the intended triggers, permissions, expressions, action revisions, environments, and required-check names from both sides; a syntactically valid YAML merge is not sufficient evidence.
+7. Run the smallest relevant formatting, type, build, and test checks. Inspect `git diff --check`, the remaining unmerged paths, and the staged diff before continuing.
+8. Continue the merge or rebase only when completing the active operation is within the user's request. During a rebase, handle later conflicts one commit at a time.
 
 Subagents may analyze independent conflicts read-only from one pinned Git state only within an unlocked current frontier when saved critical-path time exceeds dispatch, rereading, and fan-in cost; pin the operation, commits, index stages, and hunks. A single resolver owns all file writes, staging, and status checks, and executes a continue only within the user's authorized merge goal. The user retains every abort decision; the resolver never treats single-writer ownership as authorization. Resolve in waves, checkpointing unmerged paths, staged diff, and checks after each wave; any Git-state change invalidates outstanding analysis.
+
+If conflict resolution changes a workflow or a commit with relevant remote checks, prior CI conclusions are stale; identify which checks must run against the resolved head. Continue authorization does not imply publication: push and deployment remain separately authorized.
+
+Keep index, HEAD, and worktree mutations under one authorized execution identity; do not alternate identities while resolving or continuing. Keep credential-dependent network commands outside conflict resolution and run only the separately authorized command in the approved credential context. Do not change repository ownership, credential helpers, or global `safe.directory` to make identities interchangeable.
 
 Do not create an extra commit, amend unrelated history, push, or clean the worktree unless the user separately requests it or the already-authorized Git operation strictly requires it.
 

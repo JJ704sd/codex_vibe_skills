@@ -65,6 +65,20 @@ try {
     $skillText = $skillText -replace '(?m)^(description:.*)$', "`$1`nname: tdd"
     [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
     Assert-ValidatorResult 'duplicate frontmatter key' 1 (Invoke-FixtureValidator $duplicateFrontmatter) 'duplicate frontmatter key'
+
+    $missingGitCiContract = New-TestFixture 'missing-git-ci-contract'
+    $skillPath = Join-Path $missingGitCiContract 'skills\tdd\SKILL.md'
+    $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath
+    $skillText = $skillText -replace 'Map the focused and broad local commands to the repository CI jobs and required checks', 'Run the focused and broad local commands'
+    [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'missing Git and CI contract' 1 (Invoke-FixtureValidator $missingGitCiContract) 'Git/CI contract missing'
+
+    $missingCredentialContext = New-TestFixture 'missing-credential-context-contract'
+    $skillPath = Join-Path $missingCredentialContext 'skills\diagnosing-bugs\SKILL.md'
+    $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath
+    $skillText = $skillText -replace 'A failed `gh auth status` in one identity is not sufficient evidence that authentication is invalid\.', 'Treat the authentication result as conclusive.'
+    [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'missing credential-context contract' 1 (Invoke-FixtureValidator $missingCredentialContext) 'credential-context contract missing'
 } finally {
     $resolvedTemporaryRoot = [IO.Path]::GetFullPath($temporaryRoot)
     $expectedPrefix = $temporaryParent.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar + 'codex-vibe-skills-validator-tests-'

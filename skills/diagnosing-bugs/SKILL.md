@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Diagnose unknown failures, flaky behavior, environment-dependent Git or GitHub authentication/push failures, and performance regressions, or optimize a measured bottleneck with a known workload and objective. Use for reproducible evidence, falsifiable hypotheses, profiling, and controlled experiments; default to diagnosis unless repair or optimization is explicitly requested.
+description: Diagnose unknown failures, flaky behavior, failing CI/CD runs, environment-dependent Git or GitHub authentication/push failures, and performance regressions, or optimize a measured bottleneck with a known workload and objective. Use for reproducible evidence, falsifiable hypotheses, profiling, and controlled experiments; default to diagnosis unless repair or optimization is explicitly requested.
 ---
 
 # Diagnosing Bugs and Performance
@@ -20,6 +20,12 @@ Reuse an established exact loop only after confirming it still matches the pinne
 Require the loop to be red-capable, repeatable, fast enough for experiments, and agent-runnable except for an explicit human step. For flakes, record sample count and reproduction rate. Treat static analysis as provisional when no safe loop exists.
 
 For GitHub authentication, fetch, push, or PR behavior that differs across Windows terminals, sandboxes, services, or elevated identities, read [references/windows-github-credentials.md](references/windows-github-credentials.md) and run [scripts/Test-WindowsGitHubAuthContext.ps1](scripts/Test-WindowsGitHubAuthContext.ps1) in each relevant execution context. Distinguish invalid authentication from a credential-visibility boundary before asking the user to log in again.
+
+A failed `gh auth status` in one identity is not sufficient evidence that authentication is invalid. With approval, compare once in an authorized comparison identity likely to own the credential; if that context is authenticated, keep local tests and diff review in the sandbox and let only credential-dependent network commands use the approved context. When cross-owner Git access rejects an already verified repository, prefer process-local `git -c safe.directory=<absolute-repo>` for the named command; do not modify global trust configuration.
+
+Only for a reported or evidenced CI/CD failure, pin the repository, workflow, run and attempt IDs, commit SHA, event, job, runner, timestamps, and relevant matrix cell before drawing conclusions. Otherwise use the smallest feedback loop relevant to the reported symptom without adding delivery investigation. Start from redacted job logs and the exact workflow revision, then distinguish code failure from workflow, permission, secret, runner, cache, artifact, environment, or provider failure. Reproduce the smallest equivalent step locally when possible; do not assume a rerun proves flakiness or a green rerun proves the cause.
+
+Log inspection and local reproduction are read-only. Treat rerun, cancel, approve, repair, commit, push, or deploy as distinct mutations requiring task scope and authorization; never expose secrets to make CI reproducible.
 
 Build an observation-hypothesis-experiment evidence graph. Give each experiment a context capsule containing the symptom, pinned revision and environment, reproduction, redacted signal, one variable, side-effect class, budget, and stop condition. Independent read-only evidence may be collected in parallel, but shared-environment mutations, production observability, timing-sensitive work, and causal experiments remain serial. One investigator owns hypothesis ranking and causal conclusions.
 

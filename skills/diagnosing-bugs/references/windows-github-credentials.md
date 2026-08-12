@@ -24,8 +24,9 @@ Use this procedure only when Git or GitHub CLI behavior differs across Windows e
    | failed | failed | authentication likely invalid or absent | ask the user to authenticate once in the context intended for Git network operations, then rerun both probes |
    | authenticated | failed | contexts use different stores or configuration | keep the working authenticated context; do not migrate credentials without explicit authorization |
 
-5. After a successful comparison, run the smallest read-only remote check needed. Before `push` or PR creation, separately confirm scope, authorization, branch, commit, and repository.
-6. Report identities, redacted auth states, credential-channel mismatch, exact context used for each mutation, and remaining uncertainty.
+5. After a successful comparison, verify the external identity's Git channel separately from `gh`. Use `git -c safe.directory=<absolute-repo> -C <repo> ls-remote --exit-code origin <explicit-ref>` to confirm the remote and ref, but treat success on a public repository as reachability evidence only, not proof of write authentication. A successful `gh auth status` also does not prove the Git credential helper can push.
+6. Before `push` or PR creation, separately confirm scope, authorization, remote, branch, and the full commit SHA. In the credential-owning context, preserve the configured Git Credential Manager and use `git ... push --dry-run origin <verified-sha>:<explicit-ref>` as the write-channel preflight; do not set `GCM_INTERACTIVE=Never` when that would block the approved keyring flow. Then push the same verified SHA to the explicit branch ref without `-u` or `--force`, and use `ls-remote --exit-code` to prove the remote ref equals that SHA. Do not let an external identity rewrite local upstream configuration merely to publish.
+7. Report identities, redacted auth states, credential-channel mismatch, exact context used for each mutation, remote SHA verification, and remaining uncertainty.
 
 ## Safe execution pattern
 
@@ -33,5 +34,6 @@ Use this procedure only when Git or GitHub CLI behavior differs across Windows e
 - Use the approved external identity only for commands that need its credential store, such as `git fetch`, `git push`, or `gh pr view`.
 - Prefer a configured GitHub connector for PR creation when it is already authorized, but verify the pushed branch and returned PR URL independently.
 - Treat a reusable approval prefix as authorization for the matching command shape, not as permission for unrelated Git or filesystem mutations.
+- Stop rather than retrying with force, rebasing, branch-rule changes, or broader credentials when the explicit push is rejected as non-fast-forward, protected, unauthorized, or pointed at an unexpected remote.
 
 Stop on permission denial, an unexpected identity, a different repository/remote, secret-bearing output that cannot be redacted, or any request to weaken credential isolation.

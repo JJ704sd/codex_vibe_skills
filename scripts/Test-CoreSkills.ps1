@@ -131,6 +131,77 @@ $efficiencyContracts = @{
     )
 }
 
+$gitCiContracts = @{
+    'grilling' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only when the current decision depends on delivery state') },
+        @{ Label = 'discoverable delivery state first'; Patterns = @('(?i)inspect branch, PR, required-check, environment, and deployment state', '(?i)do not ask the user to recite discoverable Git or CI facts') },
+        @{ Label = 'release judgment and authorization boundary'; Patterns = @('(?i)release policy, risk acceptance, rollout timing, or business approval', '(?i)never implies authorization to commit, push, merge, rerun, approve, or deploy') }
+    )
+    'codebase-design' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only when the requested design includes or changes a CI/CD workflow or release path') },
+        @{ Label = 'delivery workflow as trust-boundary design'; Patterns = @('(?i)CI/CD workflow or release path is part of the selected design', '(?i)triggers, permissions, credentials, artifacts, environments, concurrency', '(?i)rollback') },
+        @{ Label = 'immutable action and least-privilege evidence'; Patterns = @('(?i)least-privilege permissions', '(?i)immutable action revisions') }
+    )
+    'tdd' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only when repository CI exists and the behavior or requested change depends on it') },
+        @{ Label = 'local and CI command alignment'; Patterns = @('(?i)map the focused and broad local commands to the repository CI jobs', '(?i)CI-only failure after push is not the first red') },
+        @{ Label = 'publish authorization separation'; Patterns = @('(?i)commit, push, PR creation, rerun, merge, and deployment remain separate authorized actions') }
+    )
+    'refactoring-safely' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only when the refactor can affect build, packaging, workflow, or deployment behavior') },
+        @{ Label = 'required-check preservation baseline'; Patterns = @('(?i)required CI checks and their local equivalents', '(?i)do not weaken, skip, or rewrite a CI gate merely to make the refactor green') },
+        @{ Label = 'published-check invalidation'; Patterns = @('(?i)published commit changes, treat prior remote check conclusions as stale', '(?i)push or deployment.{0,40}requires separate authorization') }
+    )
+    'evolving-contracts' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only when they change or the transition depends on them') },
+        @{ Label = 'pipeline compatibility inventory'; Patterns = @('(?i)treat CI/CD workflows, action versions, runner images, permissions, caches, artifacts, environments, and deployment interfaces as contracts', '(?i)old and new workflow paths coexist') },
+        @{ Label = 'delivery migration gates'; Patterns = @('(?i)pin third-party actions to reviewed immutable revisions', '(?i)required-check names and branch-protection expectations') }
+    )
+    'diagnosing-bugs' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only for a reported or evidenced CI/CD failure') },
+        @{ Label = 'pinned CI failure evidence'; Patterns = @('(?i)pin the repository, workflow, run and attempt IDs, commit SHA, event, job, runner', '(?i)distinguish code failure from workflow, permission, secret, runner, cache, artifact, environment, or provider failure') },
+        @{ Label = 'CI mutation authorization'; Patterns = @('(?i)log inspection and local reproduction are read-only', '(?i)rerun, cancel, approve, repair, commit, push, or deploy') }
+    )
+    'review-code-against-spec' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only when the pinned diff, governing spec, or requested evidence makes delivery behavior relevant') },
+        @{ Label = 'CI evidence in review coverage'; Patterns = @('(?i)include changed workflows, action revisions, permissions, scripts, required checks, and observed check results', '(?i)green CI is supporting evidence, not proof of Spec completeness') },
+        @{ Label = 'review remains read-only'; Patterns = @('(?i)do not rerun checks, push fixes, approve deployments, or merge unless separately requested') }
+    )
+    'resolving-merge-conflicts' = @(
+        @{ Label = 'conditional delivery activation'; Patterns = @('(?i)only for actual workflow or deployment configuration conflicts') },
+        @{ Label = 'workflow conflict semantics'; Patterns = @('(?i)workflow or deployment configuration conflicts', '(?i)triggers, permissions, expressions, action revisions, environments, and required-check names') },
+        @{ Label = 'post-resolution CI invalidation'; Patterns = @('(?i)conflict resolution changes (?:a|the) (?:commit|workflow)', '(?i)prior CI conclusions are stale', '(?i)push and deployment remain separately authorized') }
+    )
+}
+
+$credentialContextContracts = @{
+    'grilling' = @(
+        @{ Label = 'credential mismatch is discoverable evidence'; Patterns = @('(?i)authentication results differ across execution identities', '(?i)discoverable fact, not a user decision', '(?i)authorized read-only credential probe', '(?i)before asking the user to authenticate') }
+    )
+    'codebase-design' = @(
+        @{ Label = 'credential context as trust boundary'; Patterns = @('(?i)execution identity, credential-store visibility, repository ownership, and command placement as trust boundaries', '(?i)credentials in their owning store', '(?i)only credential-dependent commands in an approved context', '(?i)global safe-directory exceptions') }
+    )
+    'tdd' = @(
+        @{ Label = 'local loop isolated from credential context'; Patterns = @('(?i)red-green-refactor in the local execution context', '(?i)gh auth status.{0,80}is not test evidence', '(?i)credential-context diagnosis to `?\$diagnosing-bugs`?', '(?i)do not copy tokens') }
+    )
+    'refactoring-safely' = @(
+        @{ Label = 'preservation proof isolated from credential context'; Patterns = @('(?i)preservation proof in a stable local execution context', '(?i)do not change global credential helpers, ACLs, repository ownership, or `?safe\.directory`?', '(?i)credential-dependent Git command separately authorized') }
+    )
+    'evolving-contracts' = @(
+        @{ Label = 'credential topology as explicit contract'; Patterns = @('(?i)execution identities, credential stores and helpers, secret injection, repository ownership, and runner authentication as contracts', '(?i)without copying tokens or weakening ACLs', '(?i)store migration or global configuration change.{0,80}separately authorized phase') }
+    )
+    'diagnosing-bugs' = @(
+        @{ Label = 'identity comparison before reauthentication'; Patterns = @('(?i)failed `?gh auth status`? in one identity is not sufficient evidence', '(?i)authorized comparison identity', '(?i)only credential-dependent network commands use the approved context', '(?i)process-local `?git -c safe\.directory=<absolute-repo>`?') },
+        @{ Label = 'Git channel and fixed-SHA publication proof'; Patterns = @('(?i)public repository as reachability evidence only, not proof of write authentication', '(?i)successful `?gh auth status`?.{0,80}does not prove the Git credential helper can push', '(?i)push --dry-run origin <verified-sha>:<explicit-ref>', '(?i)preserve the configured Git Credential Manager', '(?i)do not set `?GCM_INTERACTIVE=Never`?', '(?i)without `?-u`? or `?--force`?', '(?i)prove the remote ref equals that SHA') }
+    )
+    'review-code-against-spec' = @(
+        @{ Label = 'read-only remote evidence through credential owner'; Patterns = @('(?i)PR or check evidence is inaccessible in the current identity', '(?i)evidence gap, not a defect', '(?i)read-only remote metadata in the approved credential-owning context', '(?i)record the execution identity and head SHA') }
+    )
+    'resolving-merge-conflicts' = @(
+        @{ Label = 'single identity owns conflict Git state'; Patterns = @('(?i)index, HEAD, and worktree mutations under one authorized execution identity', '(?i)do not alternate identities', '(?i)credential-dependent network commands outside conflict resolution', '(?i)do not change repository ownership, credential helpers, or global `?safe\.directory`?') }
+    )
+}
+
 if (-not (Test-Path -LiteralPath $SkillsRoot -PathType Container)) {
     throw "Skills root does not exist: $SkillsRoot"
 }
@@ -268,6 +339,23 @@ foreach ($skillName in $expectedSkills) {
     foreach ($rule in $efficiencyContracts[$skillName]) {
         if (-not (Test-ContractRule $skillText $rule.Patterns)) {
             Add-ValidationError "${skillName}: efficiency contract missing: $($rule.Label)"
+        }
+    }
+    foreach ($rule in $gitCiContracts[$skillName]) {
+        if (-not (Test-ContractRule $skillText $rule.Patterns)) {
+            Add-ValidationError "${skillName}: Git/CI contract missing: $($rule.Label)"
+        }
+    }
+    $credentialContractText = $skillText
+    if ($skillName -eq 'diagnosing-bugs') {
+        $credentialReference = Join-Path $skillRoot 'references\windows-github-credentials.md'
+        if (Test-Path -LiteralPath $credentialReference -PathType Leaf) {
+            $credentialContractText += "`n" + (Get-Content -Raw -Encoding UTF8 -LiteralPath $credentialReference)
+        }
+    }
+    foreach ($rule in $credentialContextContracts[$skillName]) {
+        if (-not (Test-ContractRule $credentialContractText $rule.Patterns)) {
+            Add-ValidationError "${skillName}: credential-context contract missing: $($rule.Label)"
         }
     }
 
