@@ -11,8 +11,8 @@ if (-not (Test-Path -LiteralPath $RepositoryPath -PathType Container)) {
 
 $resolvedRepository = (Resolve-Path -LiteralPath $RepositoryPath).Path
 $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-$ghCommand = Get-Command gh -ErrorAction SilentlyContinue
-$gitCommand = Get-Command git -ErrorAction SilentlyContinue
+$ghCommand = Get-Command gh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$gitCommand = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 
 function Protect-SensitiveText([string]$Text) {
     $protected = $Text
@@ -60,7 +60,8 @@ $ghAuthOutput = @()
 $ghAuthExitCode = $null
 $ghVersion = $null
 if ($null -ne $ghCommand) {
-    $ghVersion = (& $ghCommand.Source --version | Select-Object -First 1).ToString()
+    $ghVersionOutput = (& $ghCommand.Source --version 2>$null | Select-Object -First 1)
+    if ($null -ne $ghVersionOutput) { $ghVersion = $ghVersionOutput.ToString() }
     $savedErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     $ghAuthOutput = @(& $ghCommand.Source auth status 2>&1 | ForEach-Object { $_.ToString() })

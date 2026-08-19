@@ -1,4 +1,4 @@
 interface:
-  display_name: "Codebase and Security Design"
-  short_description: "Design interfaces, delivery paths, and trust boundaries"
-  default_prompt: "Use $codebase-design to design this module or CI/CD workflow's interfaces, dependencies, and security boundaries."
+  display_name: "Codebase Design"
+  short_description: "Design deep interfaces and trust boundaries"
+  default_prompt: "Use $codebase-design to compare interfaces and dependency boundaries for this module."

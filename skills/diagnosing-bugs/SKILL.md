@@ -1,33 +1,29 @@
 ---
 name: diagnosing-bugs
-description: Diagnose unknown failures, flaky behavior, failing CI/CD runs, environment-dependent Git or GitHub authentication/push failures, and performance regressions, or optimize a measured bottleneck with a known workload and objective. Use for reproducible evidence, falsifiable hypotheses, profiling, and controlled experiments; default to diagnosis unless repair or optimization is explicitly requested.
+description: Diagnose failures with unknown causes, flaky or environment-dependent behavior, CI failures, and measured performance regressions through reproducible evidence and falsifiable hypotheses. Use when the cause is unknown; stop at diagnosis unless repair or optimization is explicitly requested.
 ---
 
 # Diagnosing Bugs and Performance
 
-For unknown causes, finish with a reproduced symptom, verified cause, evidence, uncertainty, and smallest recommendation. Optimize only from a representative measured baseline.
+Default to diagnosis, not repair. Finish with a reproduced symptom, verified cause, evidence, uncertainty, and the smallest recommendation. Optimize only from a representative measured baseline.
 
-Read repository instructions, relevant specs, ADRs, history, and nearby tests before forming conclusions.
+Read applicable repository instructions, relevant specs, ADRs, history, and nearby tests before forming conclusions.
 
 ## Protect evidence
 
-Redact credentials, tokens, cookies, authorization headers, personal data, and sensitive payloads. Keep credentials in configured stores. Request the smallest safe substitute when redaction removes required evidence.
+Redact credentials, tokens, cookies, authorization headers, personal data, and sensitive payloads from commands and artifacts. Keep credentials in their configured stores. Request the smallest safe substitute when redaction removes evidence needed to continue.
 
-## Build the feedback loop
+## Establish the feedback loop
 
-Reuse an established exact loop only after confirming it still matches the pinned revision and environment and remains repeatable, safe, and authorized. Otherwise, or for a flake, human step, or substitute reproduction, read [references/feedback-loops.md](references/feedback-loops.md) and choose the smallest safe loop. Record its command or workload and redacted signal. For optimization with a known workload and objective, read [references/performance.md](references/performance.md) instead.
+Reuse an existing exact loop only after confirming it still matches the pinned revision and environment and remains repeatable, safe, and authorized. Otherwise, or for a flake, human step, or substitute reproduction, read [references/feedback-loops.md](references/feedback-loops.md) and choose the smallest safe loop. Record the command or workload and its redacted signal.
 
 Require the loop to be red-capable, repeatable, fast enough for experiments, and agent-runnable except for an explicit human step. For flakes, record sample count and reproduction rate. Treat static analysis as provisional when no safe loop exists.
 
-For GitHub authentication, fetch, push, or PR behavior that differs across Windows terminals, sandboxes, services, or elevated identities, read [references/windows-github-credentials.md](references/windows-github-credentials.md) and run [scripts/Test-WindowsGitHubAuthContext.ps1](scripts/Test-WindowsGitHubAuthContext.ps1) in each relevant execution context. Distinguish invalid authentication from a credential-visibility boundary before asking the user to log in again.
+For a known workload and performance objective, read [references/performance.md](references/performance.md). Establish a comparable distribution and profile the limiting resource before changing code.
 
-Require the probe to report `git_repository_valid: true` before classifying authentication; a bad path, missing Git executable, or non-repository is a local preflight failure, not credential evidence. A failed `gh auth status` in one identity is not sufficient evidence that authentication is invalid. With approval, compare once in an authorized comparison identity likely to own the credential; if that context is authenticated, keep local tests and diff review in the sandbox and let only credential-dependent network commands use the approved context. When cross-owner Git access rejects an already verified repository, prefer process-local `git -c safe.directory=<absolute-repo>` for the named command; do not modify global trust configuration.
+For Git or GitHub behavior that differs across Windows identities, sandboxes, services, or elevated processes, read [references/windows-github-credentials.md](references/windows-github-credentials.md) and run [scripts/Test-WindowsGitHubAuthContext.ps1](scripts/Test-WindowsGitHubAuthContext.ps1) in each relevant context. Distinguish an invalid repository or missing executable from an authentication result, and an authentication failure from a credential-visibility boundary.
 
-Only for a reported or evidenced CI/CD failure, pin the repository, workflow, run and attempt IDs, commit SHA, event, job, runner, timestamps, and relevant matrix cell before drawing conclusions. Otherwise use the smallest feedback loop relevant to the reported symptom without adding delivery investigation. Start from redacted job logs and the exact workflow revision, then distinguish code failure from workflow, permission, secret, runner, cache, artifact, environment, or provider failure. Reproduce the smallest equivalent step locally when possible; do not assume a rerun proves flakiness or a green rerun proves the cause.
-
-Log inspection and local reproduction are read-only. Treat rerun, cancel, approve, repair, commit, push, or deploy as distinct mutations requiring task scope and authorization; never expose secrets to make CI reproducible.
-
-Build an observation-hypothesis-experiment evidence graph. Give each experiment a context capsule containing the symptom, pinned revision and environment, reproduction, redacted signal, one variable, side-effect class, budget, and stop condition. Independent read-only evidence may be collected in parallel, but shared-environment mutations, production observability, timing-sensitive work, and causal experiments remain serial. One investigator owns hypothesis ranking and causal conclusions.
+For a reported or evidenced CI failure, pin the workflow revision, run and attempt, commit SHA, event, job, runner, timestamps, and relevant matrix cell. Start from redacted logs and the exact workflow revision, then distinguish code failure from workflow, permission, secret, runner, cache, artifact, environment, or provider failure. Log inspection and local reproduction are read-only; rerun, cancel, approve, repair, push, or deploy are separate mutations.
 
 ## Reproduce and test hypotheses
 
@@ -37,17 +33,12 @@ Build an observation-hypothesis-experiment evidence graph. Give each experiment 
 4. Reject contradicted hypotheses and update the ranking.
 5. Verify that the leading cause predicts the result, then rerun the original unminimized scenario.
 
-Never log indiscriminately or expose secrets. Obtain approval before changing production observability.
-After each experiment, checkpoint new evidence and re-rank the graph. If two consecutive rounds add no new evidence or repeat the same action/error pattern, stop and redesign the loop or request the smallest missing input; a budget stop is not a diagnosis.
+Never log indiscriminately or expose secrets. Obtain approval before changing production observability or applying production load. If two consecutive experiment rounds add no evidence or repeat the same action and error, stop and redesign the loop or request the smallest missing input; exhausting a budget is not a diagnosis.
 
-## Optimize measured bottlenecks
-
-When the workload and objective are known and optimization is requested, establish a comparable distribution, profile the limiting resource, change one variable, and compare the same workload before and after.
-
-Run repeated or worst-case workloads in a controlled local or test environment. Require separate approval, bounded load, and stop conditions before production profiling, load, or side effects. Reject changes within noise or with unacceptable correctness, security, durability, or resource trade-offs.
-
-## Repair and report
+## Repair, optimize, and report
 
 If repair is explicitly in scope, use `$tdd` at the verified public seam. If no honest seam exists, use `$codebase-design`. Treat caches, batching, concurrency, retries, and approximations as semantic changes unless their behavior is specified.
+
+For optimization, compare the same workload before and after, reject changes within noise, and preserve correctness, security, durability, and acceptable resource use.
 
 Report the reproduction or workload, environment, baseline, causal or profile evidence, experiments, checks, result distribution when applicable, remaining uncertainty, and residual risk. Remove only confirmed-disposable temporary artifacts created during this work.

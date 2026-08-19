@@ -12,7 +12,7 @@ function Add-TestError([string]$Message) {
     $errors.Add($Message)
 }
 
-function Write-FakeCommands([string]$BinPath) {
+function Write-FakeCommands([string]$BinPath, [bool]$GhAuthValid) {
     New-Item -ItemType Directory -Path $BinPath | Out-Null
     $ghCommand = @'
 @echo off
@@ -25,10 +25,11 @@ if "%1"=="auth" if "%2"=="status" (
   echo Logged in to github.com account octocat
   echo Token: ghp_FAKESECRET123456
   echo Endpoint: https://ghp_URLSECRET123456@example.invalid
-  exit /b 0
+  __GH_AUTH_EXIT__
 )
 exit /b 2
 '@
+    $ghCommand = $ghCommand.Replace('__GH_AUTH_EXIT__', $(if ($GhAuthValid) { 'exit /b 0' } else { 'exit /b 1' }))
     $gitCommand = @'
 @echo off
 echo %* | findstr /c:"rev-parse --is-inside-work-tree" >nul
@@ -75,7 +76,9 @@ function Invoke-ProbeFixture([string]$RepositoryPath, [bool]$GitValid, [string]$
 New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
 try {
     $fakeBin = Join-Path $temporaryRoot 'bin'
-    Write-FakeCommands $fakeBin
+    $unauthenticatedBin = Join-Path $temporaryRoot 'unauthenticated-bin'
+    Write-FakeCommands $fakeBin $true
+    Write-FakeCommands $unauthenticatedBin $false
     $validRepository = Join-Path $temporaryRoot 'valid-repository'
     $invalidRepository = Join-Path $temporaryRoot 'not-a-repository'
     New-Item -ItemType Directory -Path $validRepository, $invalidRepository | Out-Null
@@ -105,6 +108,21 @@ try {
             if (-not $invalidJson.gh_authenticated) { Add-TestError 'invalid repository: fixture did not isolate the Git preflight failure' }
         } catch {
             Add-TestError "invalid repository: output is not valid JSON. $($_.Exception.Message)"
+        }
+    }
+
+    $unauthenticated = Invoke-ProbeFixture $validRepository $true $unauthenticatedBin
+    if ($unauthenticated.ExitCode -ne 1) {
+        Add-TestError "unauthenticated context: expected exit 1, got $($unauthenticated.ExitCode). Output: $($unauthenticated.Output)"
+    } else {
+        try {
+            $unauthenticatedJson = $unauthenticated.Output | ConvertFrom-Json
+            if (-not $unauthenticatedJson.git_repository_valid) { Add-TestError 'unauthenticated context: valid Git repository was not preserved' }
+            if ($unauthenticatedJson.gh_authenticated) { Add-TestError 'unauthenticated context: failed gh status was reported as authenticated' }
+            if ($unauthenticatedJson.gh_auth_exit_code -ne 1) { Add-TestError 'unauthenticated context: gh exit code was not preserved' }
+            if ($unauthenticated.Output -match 'ghp_FAKESECRET123456|ghp_URLSECRET123456') { Add-TestError 'unauthenticated context: token-like text was not redacted' }
+        } catch {
+            Add-TestError "unauthenticated context: output is not valid JSON. $($_.Exception.Message)"
         }
     }
 } finally {

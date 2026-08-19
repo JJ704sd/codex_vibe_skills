@@ -17,14 +17,6 @@ Honor a user-supplied base, range, PR, or commit. Otherwise infer only when unam
 
 Capture the effective endpoints, commit context when applicable, changed-file list, and raw patch. Stop clearly if the reference is invalid or the effective change set is empty. Ask before proceeding only when competing bases materially change the review.
 
-Build a requirements-files-checks coverage map over the pinned change set. For a large review, run Standards and Spec as independent read-only workers only in the same current frontier when saved critical-path time exceeds dispatch, rereading, and fan-in cost; give both the same capsule of endpoints, raw diff, governing sources, and exclusions. At fan-in, a single report writer verifies the input is unchanged, resolves conflicting evidence from primary sources, deduplicates findings, and fills coverage gaps. A changed diff invalidates worker conclusions.
-
-Inspect delivery evidence only when the pinned diff, governing spec, or requested evidence makes delivery behavior relevant. Then include changed workflows, action revisions, permissions, scripts, required checks, and observed check results in the coverage map. Verify check results belong to the pinned head SHA and relevant event; green CI is supporting evidence, not proof of Spec completeness or unexercised deployment safety. Review remains read-only: do not rerun checks, push fixes, approve deployments, or merge unless separately requested.
-
-If PR or check evidence is inaccessible in the current identity, report an evidence gap, not a defect or proof that authentication is invalid. With approval, collect read-only remote metadata in the approved credential-owning context, then record the execution identity and head SHA with the evidence. Do not copy credentials into the review context or let evidence collection authorize a mutation.
-
-Use a risk-first review pass and iteration budget: inspect high-impact requirements, trust boundaries, shared state, and cross-file behavior before low-risk areas. Expand the review only when new evidence or a material coverage gap justifies the cost. A budget stop is not a clean review; report every unreviewed area as a residual verification gap.
-
 ## Find governing sources
 
 Find the spec in this order:
@@ -37,6 +29,8 @@ Find the spec in this order:
 If no authoritative spec exists, run only the Standards axis and label the Spec axis `No spec available`.
 
 Collect applicable repository rules, including root and nested `AGENTS.md`, contribution guides, coding standards, and tool configuration. Repository rules override the fallback [code-smell baseline](references/code-smells.md). Treat fallback smells as judgment calls, not hard violations.
+
+Build a small requirements-to-files-and-checks map when it helps expose omissions. If the diff changes delivery workflows, inspect triggers, action revisions, permissions, artifacts, required-check names, and check results for the pinned head. Green CI is supporting evidence, not proof of Spec completeness or unexercised deployment safety.
 
 ## Review independently
 
@@ -54,10 +48,8 @@ Perform two separate passes over the same raw change set so one conclusion does 
 - Cite the exact requirement, acceptance criterion, or approved behavior for every finding.
 - Do not reinterpret an ambiguous spec as a definite defect; surface the ambiguity separately.
 
-Iterate only to gather missing evidence or close coverage-map gaps. Do not let review workers modify code, vote findings into correctness, or fragment work so narrowly that cross-file behavior is lost.
-
 ## Report findings first
 
 Keep `## Standards` and `## Spec` separate. For each actionable finding include severity, a tight file/line or hunk location, evidence, impact, and the smallest correction. State explicitly when an axis has no findings or no source.
 
-End with finding count and highest severity per axis plus residual verification gaps. Do not merge the axes into one score, and do not modify code unless the user separately requests fixes.
+End with finding count and highest severity per axis plus residual verification gaps. Do not merge the axes into one score, and do not modify code, rerun remote checks, approve, merge, or deploy unless separately requested.

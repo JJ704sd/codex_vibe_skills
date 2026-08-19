@@ -8,12 +8,12 @@ Record caller needs, invariants, ordering, errors, performance expectations, dep
 
 ## Generate independent alternatives
 
-Produce at least three materially different designs in separate reasoning passes. Deliberately reset assumptions between passes. Vary the primary objective:
+Produce two or more materially different designs in separate reasoning passes. Deliberately reset assumptions between passes, and stop when another option would not add a distinct contract or trade-off. Useful objectives include:
 
-1. minimize interface area and maximize leverage;
-2. support justified variation without speculative hooks;
-3. make the common caller path trivial;
-4. when relevant, isolate a remote or external dependency.
+- minimize interface area and maximize leverage;
+- support justified variation without speculative hooks;
+- make the common caller path trivial;
+- when relevant, isolate a remote or external dependency.
 
 For each design provide:
 

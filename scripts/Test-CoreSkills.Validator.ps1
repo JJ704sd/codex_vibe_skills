@@ -62,19 +62,12 @@ try {
     [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
     Assert-ValidatorResult 'duplicate frontmatter key' 1 (Invoke-FixtureValidator $duplicateFrontmatter) 'duplicate frontmatter key'
 
-    $missingGitCiContract = New-TestFixture 'missing-git-ci-contract'
+    $missingGitCiContract = New-TestFixture 'missing-semantic-contract'
     $skillPath = Join-Path $missingGitCiContract 'skills\tdd\SKILL.md'
     $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath
-    $skillText = $skillText -replace 'Map the focused and broad local commands to the repository CI jobs and required checks', 'Run the focused and broad local commands'
+    $skillText = $skillText -replace '\*\*Red\*\*', '**Start**'
     [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
-    Assert-ValidatorResult 'missing Git and CI contract' 1 (Invoke-FixtureValidator $missingGitCiContract) 'Git/CI contract missing'
-
-    $missingCredentialContext = New-TestFixture 'missing-credential-context-contract'
-    $skillPath = Join-Path $missingCredentialContext 'skills\diagnosing-bugs\SKILL.md'
-    $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath
-    $skillText = $skillText -replace 'A failed `gh auth status` in one identity is not sufficient evidence that authentication is invalid\.', 'Treat the authentication result as conclusive.'
-    [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
-    Assert-ValidatorResult 'missing credential-context contract' 1 (Invoke-FixtureValidator $missingCredentialContext) 'credential-context contract missing'
+    Assert-ValidatorResult 'missing semantic contract' 1 (Invoke-FixtureValidator $missingGitCiContract) 'semantic contract missing'
 
     $mutableAction = New-TestFixture 'mutable-workflow-action'
     $workflowPath = Join-Path $mutableAction '.github\workflows\validate.yml'
@@ -93,12 +86,24 @@ try {
     $orphanResource = New-TestFixture 'orphan-skill-resource'
     $orphanPath = Join-Path $orphanResource 'skills\tdd\references\orphan.md'
     [IO.File]::WriteAllText($orphanPath, "# Orphan`n", [Text.UTF8Encoding]::new($false))
-    Assert-ValidatorResult 'orphan skill resource' 1 (Invoke-FixtureValidator $orphanResource) 'resource is not linked directly from SKILL\.md'
+    Assert-ValidatorResult 'orphan skill resource' 1 (Invoke-FixtureValidator $orphanResource) 'resource is unreachable from SKILL\.md'
+
+    $indirectResource = New-TestFixture 'indirect-resource-link'
+    $nestedReferencePath = Join-Path $indirectResource 'skills\tdd\references\nested.md'
+    [IO.File]::WriteAllText($nestedReferencePath, "# Nested evidence`n", [Text.UTF8Encoding]::new($false))
+    $testsReferencePath = Join-Path $indirectResource 'skills\tdd\references\tests.md'
+    [IO.File]::AppendAllText($testsReferencePath, "`n[Read the nested evidence](nested.md)`n", [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'indirect resource link' 0 (Invoke-FixtureValidator $indirectResource) 'validation passed'
 
     $escapingLink = New-TestFixture 'escaping-relative-link'
     $readmePath = Join-Path $escapingLink 'README.md'
     [IO.File]::AppendAllText($readmePath, "`n[escape](../outside.md)`n", [Text.UTF8Encoding]::new($false))
     Assert-ValidatorResult 'escaping relative link' 1 (Invoke-FixtureValidator $escapingLink) 'Relative link escapes repository root'
+
+    $escapingSkillLink = New-TestFixture 'escaping-skill-link'
+    $skillPath = Join-Path $escapingSkillLink 'skills\tdd\SKILL.md'
+    [IO.File]::AppendAllText($skillPath, "`n[repository file](../../README.md)`n", [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'escaping skill link' 1 (Invoke-FixtureValidator $escapingSkillLink) 'Relative link escapes skill root'
 
     $invalidPowerShell = New-TestFixture 'invalid-powershell-resource'
     $probePath = Join-Path $invalidPowerShell 'skills\diagnosing-bugs\scripts\Test-WindowsGitHubAuthContext.ps1'
