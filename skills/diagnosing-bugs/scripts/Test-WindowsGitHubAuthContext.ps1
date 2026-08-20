@@ -37,8 +37,9 @@ $gitRepositoryValid = $false
 $gitRepositoryProbeExitCode = $null
 if ($null -ne $gitCommand) {
     $safeDirectory = $resolvedRepository.Replace('\', '/')
-    $gitRepositoryProbe = (& $gitCommand.Source -c "safe.directory=$safeDirectory" -C $resolvedRepository rev-parse --is-inside-work-tree 2>$null | Select-Object -First 1)
+    $gitRepositoryProbeOutput = @(& $gitCommand.Source -c "safe.directory=$safeDirectory" -C $resolvedRepository rev-parse --is-inside-work-tree 2>$null)
     $gitRepositoryProbeExitCode = $LASTEXITCODE
+    $gitRepositoryProbe = $gitRepositoryProbeOutput | Select-Object -First 1
     $gitRepositoryValid = $gitRepositoryProbeExitCode -eq 0 -and $gitRepositoryProbe -eq 'true'
 
     if ($gitRepositoryValid) {

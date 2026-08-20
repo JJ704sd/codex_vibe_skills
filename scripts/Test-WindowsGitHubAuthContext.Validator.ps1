@@ -52,6 +52,7 @@ public static class FakeCommand
         {
             if (Environment.GetEnvironmentVariable("CODEX_TEST_GIT_VALID") != "1") return 128;
             Console.WriteLine("true");
+            System.Threading.Thread.Sleep(250);
             return 0;
         }
         if (HasSequence(args, "config", "--show-origin", "--get-all", "credential.helper"))
