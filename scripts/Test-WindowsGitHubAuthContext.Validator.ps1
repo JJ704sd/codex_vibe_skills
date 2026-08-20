@@ -12,68 +12,93 @@ function Add-TestError([string]$Message) {
     $errors.Add($Message)
 }
 
-function Write-FakeCommands([string]$BinPath, [bool]$GhAuthValid) {
+function Write-FakeCommands([string]$BinPath) {
     New-Item -ItemType Directory -Path $BinPath | Out-Null
-    $ghCommand = @'
-@echo off
-if "%1"=="--version" (
-  echo gh version 0.0.0-test
-  exit /b 0
-)
-if "%1"=="auth" if "%2"=="status" (
-  echo github.com
-  echo Logged in to github.com account octocat
-  echo Token: ghp_FAKESECRET123456
-  echo Endpoint: https://ghp_URLSECRET123456@example.invalid
-  __GH_AUTH_EXIT__
-)
-exit /b 2
+    $fakeCommandSource = @'
+using System;
+using System.IO;
+
+public static class FakeCommand
+{
+    public static int Main(string[] args)
+    {
+        string command = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+        if (String.Equals(command, "gh", StringComparison.OrdinalIgnoreCase)) return RunGh(args);
+        if (String.Equals(command, "git", StringComparison.OrdinalIgnoreCase)) return RunGit(args);
+        return 2;
+    }
+
+    private static int RunGh(string[] args)
+    {
+        if (HasSequence(args, "--version"))
+        {
+            Console.WriteLine("gh version 0.0.0-test");
+            return 0;
+        }
+        if (HasSequence(args, "auth", "status"))
+        {
+            Console.WriteLine("github.com");
+            Console.WriteLine("Logged in to github.com account octocat");
+            Console.WriteLine("Token: ghp_FAKESECRET123456");
+            Console.WriteLine("Endpoint: https://ghp_URLSECRET123456@example.invalid");
+            return Environment.GetEnvironmentVariable("CODEX_TEST_GH_AUTH_VALID") == "1" ? 0 : 1;
+        }
+        return 2;
+    }
+
+    private static int RunGit(string[] args)
+    {
+        if (HasSequence(args, "rev-parse", "--is-inside-work-tree"))
+        {
+            if (Environment.GetEnvironmentVariable("CODEX_TEST_GIT_VALID") != "1") return 128;
+            Console.WriteLine("true");
+            return 0;
+        }
+        if (HasSequence(args, "config", "--show-origin", "--get-all", "credential.helper"))
+        {
+            Console.WriteLine("file:test credential-manager");
+            return 0;
+        }
+        if (HasSequence(args, "remote", "get-url", "origin"))
+        {
+            Console.WriteLine("https://example.invalid/repository.git");
+            return 0;
+        }
+        return 2;
+    }
+
+    private static bool HasSequence(string[] args, params string[] expected)
+    {
+        for (int start = 0; start <= args.Length - expected.Length; start++)
+        {
+            bool matches = true;
+            for (int offset = 0; offset < expected.Length; offset++)
+            {
+                if (!String.Equals(args[start + offset], expected[offset], StringComparison.Ordinal))
+                {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) return true;
+        }
+        return false;
+    }
+}
 '@
-    $ghCommand = $ghCommand.Replace('__GH_AUTH_EXIT__', $(if ($GhAuthValid) { 'exit /b 0' } else { 'exit /b 1' }))
-    $gitCommand = @'
-@echo off
-:scan
-if "%~1"=="" exit /b 0
-if "%~1"=="rev-parse" goto rev_parse
-if "%~1"=="config" goto config
-if "%~1"=="remote" goto remote
-shift
-goto scan
-
-:rev_parse
-if "%~2"=="--is-inside-work-tree" (
-  if "%CODEX_TEST_GIT_VALID%"=="1" (
-    echo true
-    exit /b 0
-  )
-  exit /b 128
-)
-exit /b 2
-
-:config
-if "%~2"=="--show-origin" if "%~3"=="--get-all" if "%~4"=="credential.helper" (
-  echo file:test credential-manager
-  exit /b 0
-)
-exit /b 2
-
-:remote
-if "%~2"=="get-url" if "%~3"=="origin" (
-  echo https://example.invalid/repository.git
-  exit /b 0
-)
-exit /b 2
-'@
-    [IO.File]::WriteAllText((Join-Path $BinPath 'gh.cmd'), $ghCommand, [Text.ASCIIEncoding]::new())
-    [IO.File]::WriteAllText((Join-Path $BinPath 'git.cmd'), $gitCommand, [Text.ASCIIEncoding]::new())
+    $gitPath = Join-Path $BinPath 'git.exe'
+    Add-Type -TypeDefinition $fakeCommandSource -Language CSharp -OutputAssembly $gitPath -OutputType ConsoleApplication
+    Copy-Item -LiteralPath $gitPath -Destination (Join-Path $BinPath 'gh.exe')
 }
 
-function Invoke-ProbeFixture([string]$RepositoryPath, [bool]$GitValid, [string]$BinPath) {
+function Invoke-ProbeFixture([string]$RepositoryPath, [bool]$GitValid, [bool]$GhAuthValid, [string]$BinPath) {
     $savedPath = $env:PATH
     $savedGitValid = $env:CODEX_TEST_GIT_VALID
+    $savedGhAuthValid = $env:CODEX_TEST_GH_AUTH_VALID
     try {
         $env:PATH = $BinPath + [IO.Path]::PathSeparator + $savedPath
         $env:CODEX_TEST_GIT_VALID = if ($GitValid) { '1' } else { '0' }
+        $env:CODEX_TEST_GH_AUTH_VALID = if ($GhAuthValid) { '1' } else { '0' }
         $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $probePath -RepositoryPath $RepositoryPath 2>&1 | Out-String
         return [PSCustomObject]@{
             ExitCode = $LASTEXITCODE
@@ -82,20 +107,19 @@ function Invoke-ProbeFixture([string]$RepositoryPath, [bool]$GitValid, [string]$
     } finally {
         $env:PATH = $savedPath
         $env:CODEX_TEST_GIT_VALID = $savedGitValid
+        $env:CODEX_TEST_GH_AUTH_VALID = $savedGhAuthValid
     }
 }
 
 New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
 try {
     $fakeBin = Join-Path $temporaryRoot 'bin'
-    $unauthenticatedBin = Join-Path $temporaryRoot 'unauthenticated-bin'
-    Write-FakeCommands $fakeBin $true
-    Write-FakeCommands $unauthenticatedBin $false
+    Write-FakeCommands $fakeBin
     $validRepository = Join-Path $temporaryRoot 'valid-repository'
     $invalidRepository = Join-Path $temporaryRoot 'not-a-repository'
     New-Item -ItemType Directory -Path $validRepository, $invalidRepository | Out-Null
 
-    $valid = Invoke-ProbeFixture $validRepository $true $fakeBin
+    $valid = Invoke-ProbeFixture $validRepository $true $true $fakeBin
     if ($valid.ExitCode -ne 0) {
         Add-TestError "valid repository: expected exit 0, got $($valid.ExitCode). Output: $($valid.Output)"
     } else {
@@ -110,7 +134,7 @@ try {
         }
     }
 
-    $invalid = Invoke-ProbeFixture $invalidRepository $false $fakeBin
+    $invalid = Invoke-ProbeFixture $invalidRepository $false $true $fakeBin
     if ($invalid.ExitCode -ne 1) {
         Add-TestError "invalid repository: expected exit 1, got $($invalid.ExitCode). Output: $($invalid.Output)"
     } else {
@@ -123,7 +147,7 @@ try {
         }
     }
 
-    $unauthenticated = Invoke-ProbeFixture $validRepository $true $unauthenticatedBin
+    $unauthenticated = Invoke-ProbeFixture $validRepository $true $false $fakeBin
     if ($unauthenticated.ExitCode -ne 1) {
         Add-TestError "unauthenticated context: expected exit 1, got $($unauthenticated.ExitCode). Output: $($unauthenticated.Output)"
     } else {
