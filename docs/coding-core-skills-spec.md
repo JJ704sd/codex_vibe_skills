@@ -1,144 +1,116 @@
 # Codex 通用代码核心 Skills 规范
 
-状态：第六轮全面质量审计，已实施并验证
-日期：2026-08-12
-参考源：`D:\quality_tests_skills` 与现有工作区
-
 ## 1. 目标
 
-维护一组跨语言、跨仓库、低重叠的代码工作 skill。只覆盖 Codex 默认能力在高风险节点容易失稳的流程，不包装普通读代码、实现、解释或运行测试。
+维护一组跨语言、跨仓库、低重叠的代码工作 skills。每个 skill 必须同时满足：
 
-核心集合共 8 个：
+1. **独立触发**：用户请求中存在可区分的工作状态，而不是“任何编码任务都可能有用”。
+2. **高错误成本**：省略该流程会显著增加错误归因、行为回退、兼容性破坏、数据损失或错误授权风险。
+3. **非默认知识**：说明 Codex 默认能力之外的重要顺序、证据或停止条件。
+4. **可观察完成**：输出能由测试、diff、兼容矩阵、实验、规范或用户确认验证。
+5. **跨项目复用**：不把单一仓库、平台或历史故障固化成通用入口。
+6. **渐进披露**：发现信息短而精确，入口只保留共享约束，场景细节按需加载。
+7. **授权守恒**：完成当前分析或本地验证不扩大外部写入、生产操作或破坏性动作权限。
 
-| Skill | 守住的决策点 | 不可替代的证据或顺序 |
-| --- | --- | --- |
-| `grilling` | 重要决策尚未闭合 | 只问不可发现的判断，按依赖前沿分轮收敛 |
-| `codebase-design` | 接口、依赖或安全边界未定 | 先确定调用者契约、信任边界与验证 seam |
-| `tdd` | 已知行为需要 test-first 实现 | 必须留下因目标行为缺失而失败的 red 证据 |
-| `refactoring-safely` | 结构要变、外部行为不应变 | 先固定不变量和绿色基线，再小步证明保持行为 |
-| `evolving-contracts` | 契约、数据或外部依赖版本变化 | 权威版本证据、混合态验证和有界迁移 |
-| `diagnosing-bugs` | 根因未知或性能指标需改善 | 可重复反馈回路、可证伪假设、profile 与单变量实验 |
-| `review-code-against-spec` | 固定 diff 待验收 | Standards 与 Spec 两个独立审查轴 |
-| `resolving-merge-conflicts` | merge/rebase 已出现冲突 | 重建双方意图、逐路径暂存并保护无关改动 |
+普通读代码、实现、解释、运行测试、写文档、拆 ticket、全仓扫描和通用编排不单独设 skill。
 
-## 2. 第一性原理筛选
+## 2. 核心集合
 
-一个 skill 必须同时满足：独立触发、高错误成本、跨项目复用、提供非默认程序知识、有明确完成证据和停止条件、上下文最小、授权安全。
+| Skill | 正向触发 | 主要排除边界 | 必须留下的证据 |
+| --- | --- | --- | --- |
+| `grilling` | 当前用户持有的关键判断尚未闭合 | 可从仓库或工具发现的事实；普通澄清 | 决策依赖、已确认选择、剩余风险 |
+| `codebase-design` | 选定模块的调用者契约、seam、依赖或信任边界未定 | 全仓架构扫描；已定设计的直接实现 | 推荐契约、备选比较、验证 seam |
+| `tdd` | 已知行为明确要求 test-first，或已验证回归需锁定 | 根因或预期未知；纯结构重构 | 目标行为导致的 red、green 和相关检查 |
+| `refactoring-safely` | 结构改变而调用者可见行为保持 | 行为变更；未知缺陷；跨版本迁移 | 保持不变量、绿色基线、分步证明 |
+| `evolving-contracts` | 新旧 API、数据、配置、依赖或环境状态需要共存 | 纯内部重构；目标契约未定 | 兼容矩阵、阶段 gate、收缩条件和恢复路径 |
+| `diagnosing-bugs` | 根因未知、偶发、环境相关或性能回退 | 已知行为的直接实现 | 复现、假设实验、因果或 profile 证据、不确定性 |
+| `review-code-against-spec` | 固定变更集需要验收 | 开放式代码库评估；默认修复 | Standards 与 Spec 独立 findings 和覆盖缺口 |
+| `resolving-merge-conflicts` | Git 已进入 merge/rebase 冲突状态 | 预防性合并分析；普通 Git 操作 | 双方意图、逐路径解析、状态与验证结果 |
 
-合并依据：
+集合保持 8 项。新增入口必须证明其证据逻辑不能由现有项的条件分支或 reference 清晰承载。
 
-- 威胁建模并入 `codebase-design`：二者都在设计落定前推导接口不变量和测试 seam，安全内容按需读取。
-- 性能优化并入 `diagnosing-bugs`：二者都依赖可重复基线、profile、可证伪假设和单变量实验；区别只在是否已知 workload 与目标。
-- 依赖升级并入 `evolving-contracts`：依赖版本也是外部契约，核心都是版本证据、兼容矩阵、有界迁移和混合状态验证。
-
-仍保持分离：
-
-- `tdd` 要先红，`refactoring-safely` 要保持绿，证据逻辑相反。
-- `review-code-against-spec` 默认不修改代码，不能并入实现流程。
-- `resolving-merge-conflicts` 有独立 Git 状态和高破坏风险。
-- `grilling` 处理用户持有的未决判断，`codebase-design` 处理可从证据推导的技术设计。
-
-## 3. 不纳入
-
-普通实现、元路由、通用 research、写 spec、拆 ticket、triage、handoff、全仓架构扫描、原型、发布门禁、测试总管、可观测性/文档/CI 通用包装均不设独立 skill。它们属于默认能力、组织流程或仅应作为具体任务的证据手段。
-
-## 4. 边界与交接
+## 3. 边界与交接
 
 ```text
-决策未闭合 ──> grilling ──> 共享理解
+用户判断未闭合 -> grilling -> 共享理解
 
-接口/依赖/安全边界未定 ──> codebase-design ──> 普通实现 / tdd
-新行为且 test-first ──> tdd
-结构变化且行为不变 ──> refactoring-safely
-公共形式、数据或依赖版本变化 ──> evolving-contracts ──> tdd slices
+接口或信任边界未定 -> codebase-design -> 普通实现 / tdd
+已知行为且 test-first -> tdd
+结构变化且行为不变 -> refactoring-safely
+公共形式或依赖版本变化 -> evolving-contracts
 
-根因未知 ──> diagnosing-bugs ──> 已验证原因且获准修复 ──> tdd / 普通实现
-已有 workload 与性能目标 ──> diagnosing-bugs 的性能分支
-
-固定 diff 待验收 ──> review-code-against-spec
-merge/rebase 冲突中 ──> resolving-merge-conflicts
+根因未知 -> diagnosing-bugs
+已验证原因且获准修复 -> tdd / 普通实现
+固定 diff 待验收 -> review-code-against-spec
+Git 已报告冲突 -> resolving-merge-conflicts
 ```
 
-### 4.1 Git 与 CI/CD 场景映射
+关键区分：
 
-Git/CI/CD 不新增元路由 skill，而是沿现有证据逻辑分布。仅当仓库存在相关 workflow、required checks、制品或部署契约，且当前任务会读取、影响或改变它们时启用；否则保持原 skill 的基础证据链。
+- `tdd` 必须先红；`refactoring-safely` 必须先有可解释的绿色基线。
+- `codebase-design` 决定目标契约；`evolving-contracts` 处理已定目标在新旧状态间的过渡。
+- `diagnosing-bugs` 默认止于已验证原因；修复是另一个明确授权的阶段。
+- `review-code-against-spec` 默认只报告，不把审查请求解释为修改授权。
+- `resolving-merge-conflicts` 只在 Git 已有冲突状态时触发，并保护无关工作树内容。
 
-| 场景 | 归属 | 完成证据与授权边界 |
-| --- | --- | --- |
-| 发布策略、风险接受、上线时机未定 | `grilling` | 先读取分支、PR、required checks、环境和部署状态；只询问不可发现的业务判断 |
-| 设计或重构发布流水线 | `codebase-design` | 触发器、最小权限、凭据/secret、fork 制品晋级、环境、并发、回滚与验证 seam |
-| 已知行为的 test-first 实现 | `tdd` | 本地 red/green 与 CI job 映射；CI-only 失败不能替代第一条 red |
-| 保持行为的内部重构 | `refactoring-safely` | required checks 与本地等价命令保持；门禁变更移交 `evolving-contracts` |
-| action、runner、权限、缓存、制品或部署接口演进 | `evolving-contracts` | 固定版本与兼容矩阵、不可变 action revision、required-check 名称、混合态和恢复证据 |
-| CI/CD 失败根因未知 | `diagnosing-bugs` | 固定 workflow/run/attempt/head SHA/event/job/runner；日志脱敏并做单变量实验 |
-| 固定 diff 或 PR 待验收 | `review-code-against-spec` | workflow、脚本、权限、action SHA 和属于固定 head SHA 的检查结果进入 coverage map |
-| merge/rebase 中 workflow 冲突 | `resolving-merge-conflicts` | 重建两侧触发器、权限、表达式、环境和 required-check 语义；解析后旧检查失效 |
+## 4. 渐进披露与资源
 
-共享不变量：读取状态和日志默认只读；commit、push、PR 创建、检查 rerun/cancel、merge、环境批准和 deploy 是独立副作用，不能互相推导授权。绿色 CI 只证明已执行的提交、事件和矩阵单元，不证明 Spec 完整、未执行环境安全或部署获批。
+每个 skill 由三层组成：
 
-凭据上下文不变量：单一身份的 `gh auth status` 失败只证明该进程未认证，不能单独证明用户凭据失效。仅在身份间结果不一致且任务需要远端证据或操作时，获批执行一次脱敏的对照探针；若凭据拥有身份有效，本地测试与 diff 审查仍留在沙箱，仅让明确的凭据相关网络命令使用获批身份。不得复制 token、削弱 ACL、迁移仓库所有权或修改全局凭据/`safe.directory` 配置来统一上下文。
+1. **名称与 description**：用于选择，保持简短、区分性强，并写出主要反例。
+2. **`SKILL.md`**：共享目标、非显然流程、关键 guardrails、报告契约和按需路由。
+3. **资源**：只有当前场景需要时才读取 reference 或执行 script。
 
-硬边界：
+资源必须满足：
 
-- `grilling` 不询问可从仓库或工具发现的事实，也不隐式开始实现。
-- `codebase-design` 只设计已选模块；安全模型中的未批准风险不是 Spec 要求。
-- `tdd` 只处理已知行为或已验证回归；纯重构不能伪造 red。
-- `refactoring-safely` 不接受未批准的行为变化，也不撤回既有用户改动。
-- `evolving-contracts` 不把部署顺序当兼容证明，不把应用回滚当数据回滚，也不把 manifest 约束当最终解析图。
-- `diagnosing-bugs` 默认止于验证原因；性能实验必须有代表性基线，生产负载需单独授权。
-- `review-code-against-spec` 默认只报 findings。
-- `resolving-merge-conflicts` 仅在 Git 已报告冲突时使用，只暂存已解决路径。
+- 从 `SKILL.md` 经相对链接直接或间接可达；
+- 相对链接不能逃逸 skill 目录；
+- 内容只有一个权威位置，不在多个入口重复；
+- 脚本处理可重复且易错的机械逻辑，并有可运行的行为测试；
+- 不创建辅助 README、变更日志、占位目录或未引用示例。
 
-## 5. 内容与元数据约束
+Windows GitHub 凭据上下文是 `diagnosing-bugs` 的条件分支，而不是全部技能的共享入口规则。CI/CD 规则只在当前任务确实设计、改变、诊断、审查或解析交付契约时启用。
 
-- `SKILL.md` frontmatter 仅含 `name` 和 `description`；description 写清触发与排除边界；正文不超过本地 100 行预算。
-- `agents/openai.yaml` 仅含 `interface` 下带引号的 `display_name`、25–64 字符 `short_description` 和显式提及 `$skill-name` 的 `default_prompt`，不接受重复键或额外字段。
-- 细节只在能降低主入口上下文时放入一层 `references/`，且必须由 `SKILL.md` 直接链接。
-- README、规范和 skill 文档中的仓库内相对链接必须存在且不得逃逸仓库根目录。
-- 不创建辅助 README、变更日志、安装说明或未引用资源。
+## 5. 安全与停止条件
+
+- 保留用户已有改动；不以 reset、全树暂存或无关清理制造“干净”状态。
+- 读取状态与日志不等于授权 rerun、commit、push、PR、merge、批准或部署。
+- 生产观测、负载、迁移、不可逆写入和破坏性恢复都需要与风险相称的明确授权和停止条件。
+- 凭据留在所属存储中；不复制 token，不通过 ACL、所有权或全局 Git 配置让身份共享凭据。
+- 重复同一动作而没有新证据不是进展。诊断和访谈流程应停止、重建回路或请求最小缺失输入。
+- 预算耗尽、单次绿灯或静态推断不能冒充完成证据。
 
 ## 6. 验收案例
 
 | 请求 | 预期 |
 | --- | --- |
-| “逐轮挑战这个缓存设计里的未决选择” | `grilling` |
-| “设计支付接口，并分析租户越权路径” | `codebase-design` |
+| “逐轮挑战这个缓存方案中还没决定的取舍” | `grilling` |
+| “这个事实能从仓库查到，帮我确认” | 不触发 `grilling`；直接调查 |
+| “比较支付模块的两个公共接口，并分析租户越权边界” | `codebase-design` |
+| “接口已经定了，直接实现这个小改动” | 默认能力；不触发 `codebase-design` |
 | “行为已确定，用 TDD 实现” | `tdd` |
 | “内部重命名，公开行为必须不变” | `refactoring-safely` |
 | “公共字段改名，旧客户端还要运行两版” | `evolving-contracts` |
-| “按官方指南升级框架两个 major” | `evolving-contracts` |
-| “偶发超时，根因不清楚” | `diagnosing-bugs` 的诊断分支 |
-| “已复现查询从 p95 800ms 优化到 300ms” | `diagnosing-bugs` 的性能分支 |
-| “慢接口尚未复现或建立基线” | 仍先进入诊断分支 |
-| “按 AGENTS.md 和原始 spec 审查 diff” | `review-code-against-spec` |
-| “rebase 卡在冲突，保留双方意图并继续” | `resolving-merge-conflicts` |
-| “设计允许 fork PR、产出制品并经批准部署的最小权限 Actions 流水线” | `codebase-design`；设计不隐含实施或部署授权 |
-| “升级 runner 和 action，同时保持旧分支 required checks 可用” | `evolving-contracts`；验证新旧工作流混合态 |
-| “同一提交只在 windows-latest 失败，原因未知” | `diagnosing-bugs`；固定 run/attempt/head SHA 后诊断 |
-| “PR 检查全绿，核实 workflow 权限和验收条件是否完整” | `review-code-against-spec`；绿色结果仅作支持证据 |
-| “workflow 冲突已解决，直接沿用冲突前的绿灯结果” | 拒绝；`resolving-merge-conflicts` 应把旧检查视为失效 |
-| “沙箱 `gh auth status` 报 token 无效，但 Administrator 刚登录成功” | `diagnosing-bugs`；获批对照两个身份后再判断，不要求重复登录 |
-| “Administrator 可认证但 Git 报 dubious ownership” | 对已核实仓库使用单命令 `git -c safe.directory=<absolute-repo>`；不修改全局配置 |
-| “公开仓库 `ls-remote` 成功，因此 push 凭据肯定有效” | 拒绝；它只证明可读，获批后以保留 Credential Manager 的固定 SHA `push --dry-run` 验证写通道 |
-| “为了让两个身份都能 push，把 token 写到 `GH_TOKEN` 或放宽凭据 ACL” | 拒绝；保持 Keyring 隔离，仅让获批网络命令使用凭据拥有身份 |
+| “偶发超时，根因不清楚” | `diagnosing-bugs` |
+| “已知慢查询，把 p95 从 800ms 降到 300ms” | `diagnosing-bugs` 的性能分支 |
+| “按 AGENTS.md 和原始 spec 审查这个 diff” | `review-code-against-spec` |
+| “rebase 已卡在冲突，保留双方意图并继续” | `resolving-merge-conflicts` |
+| “沙箱和普通终端的 GitHub 认证结果不同” | `diagnosing-bugs` 的 Windows 凭据 reference |
 | “实现这个明确的小改动” | 不触发 skill，使用默认能力 |
+| “关键知识只在未到场的审批人手里，继续问我” | 不向当前用户转嫁问题；记录最小缺失决策或证据 |
+| “两个强制约束互相冲突，但先给出一个能用的接口” | `codebase-design` 明示不可同时满足的最小冲突；不虚构契约 |
+| “TDD 的新测试一开始就通过，或者红绿结果会随机变化” | 不把它计作 red；先验证 seam、确认行为是否已存在或诊断 flake |
+| “重构前基线失败，关键行为也没有可比较证据” | 不声称绿色基线或行为保持；隔离失败、缩小范围或报告证明缺口 |
+| “迁移中断后游标和仓库版本对不上，直接重跑写入” | `evolving-contracts` 回到最后验证的安全边界；禁止含糊断点重放 |
+| “同一诊断动作重复两轮仍没有新证据” | 重建反馈回路或请求最小输入；预算耗尽不算诊断 |
+| “变更包含无法取得内容的二进制或远程检查” | `review-code-against-spec` 报告验证缺口；不把不透明内容判为已审查 |
+| “分析冲突后 HEAD 或未合并路径集合发生变化” | `resolving-merge-conflicts` 重新固定状态；不按过期方案编辑或暂存 |
 
-## 7. 完成标准
+## 7. 仓库验收
 
-- 工作区恰有上述 8 个 skill，目录、frontmatter、元数据和 README 同步。
-- 相对链接、孤立资源、模板标记和未安装 skill 调用为 0。
-- 仓库验证器、校验器负向行为测试、Windows GitHub 凭据探针行为测试与系统 `quick_validate.py`（Windows 使用 Python UTF-8 模式）全部通过。
-- GitHub Actions 在 push、pull request 和手动触发时以只读仓库权限运行三层仓库自检。
-- 高重叠边界有正例、反例或交接案例；复杂合并点做代表性前向检查。
-
-## 8. 本轮实施
-
-从 11 项压缩到 8 项：删除 `threat-modeling`、`optimizing-performance`、`upgrading-dependencies` 独立入口，关键规则分别下沉到 `codebase-design`、`diagnosing-bugs`、`evolving-contracts` 的按需 reference。没有删除关键安全、测量或兼容约束，也没有增加元路由层。
-
-第四轮把 Git 管理与 CI/CD 作为横切证据同步到全部 8 项：设计与契约 skill 管理流水线边界和兼容性，诊断与审查 skill 固定远端证据，TDD 与重构 skill 对齐本地验证和 required checks，冲突 skill 使旧检查失效，`grilling` 只收敛不可发现的发布判断。所有远端写操作继续保持独立授权。
-
-第五轮把 Windows GitHub 凭据上下文分离经验按职责同步到 8 项：详细探针、分类表与安全执行模式仍集中在 `diagnosing-bugs` 的按需 reference；其余入口只保留与本 skill 证据链相关的判断、交接与授权边界。该流程仅在身份间认证结果不一致且当前任务需要 GitHub 凭据时启用。
-
-第六轮全面复核 8 个技能的触发边界、渐进披露、UI 元数据、资源链接、脚本与 CI。核心技能正文无需大幅改写；修正集中在严格 UTF-8 与 LF 约束、CI 契约校验、校验器负向覆盖，以及凭据探针的仓库前置检查和防御性脱敏。
-
-最终验证结果：三套仓库测试全部通过，系统 `quick_validate.py` 在 Python UTF-8 模式下 8/8 通过，`git diff --check` 通过；设计/安全、故障/性能、契约/依赖三组合并点，以及 Git/CI/CD 与凭据上下文的条件触发前向检查，均能正确选择分支、保留授权边界并产出所需证据。普通模块设计、TDD、重构、代码审查和非 workflow 冲突不会被迫追加 CI/CD 或凭据探测；探针会先拒绝无效仓库上下文，并能把“沙箱失败、Keyring 拥有身份成功”分类为 credential-visibility boundary。
+- 恰有上述 8 个 skill，目录名、frontmatter、UI 元数据和 README 一致。
+- 所有相对链接有效且不逃逸作用域；孤立资源、模板标记和未安装 skill 调用为 0。
+- 每个入口保留其区分性语义：触发状态、核心证据、停止或交接边界。
+- PowerShell 脚本语法有效，文本为严格 UTF-8，CI 外部 action 固定到完整提交 SHA，并使用只读权限。
+- 仓库验证器、验证器负向行为测试、Windows GitHub 探针行为测试、系统 `quick_validate.py` 与 `git diff --check` 全部通过。
+- 修改完成后检查工作树范围，在独立 `codex/` 分支创建说明意图的原子提交；push 保持为单独授权动作。
