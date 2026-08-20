@@ -34,6 +34,17 @@ function Test-ContractRule([string]$Text, [string[]]$Patterns) {
     return $true
 }
 
+$descriptionContracts = @{
+    'grilling' = @{ Label = 'current-user decision boundary'; Patterns = @('(?i)do not use for facts Codex can discover', '(?i)knowledge held only by another person') }
+    'codebase-design' = @{ Label = 'selected unresolved design boundary'; Patterns = @('(?i)do not use for codebase-wide architecture scans', '(?i)already settled design') }
+    'tdd' = @{ Label = 'known behavior boundary'; Patterns = @('(?i)use \$diagnosing-bugs while the cause or expected behavior remains unknown') }
+    'refactoring-safely' = @{ Label = 'behavior-preserving boundary'; Patterns = @('(?i)do not use when behavior should change', '(?i)cross-version public contract') }
+    'evolving-contracts' = @{ Label = 'mixed-state contract boundary'; Patterns = @('(?i)do not use for purely internal refactors', '(?i)undecided target contract') }
+    'diagnosing-bugs' = @{ Label = 'diagnosis-only default boundary'; Patterns = @('(?i)stop at diagnosis unless repair or optimization is explicitly requested') }
+    'review-code-against-spec' = @{ Label = 'fixed read-only review boundary'; Patterns = @('(?i)fixed change set', '(?i)without modifying code unless fixes are separately requested') }
+    'resolving-merge-conflicts' = @{ Label = 'active merge-or-rebase boundary'; Patterns = @('(?i)use only when Git reports unresolved merge or rebase conflicts') }
+}
+
 function Test-PathWithinRoot([string]$Candidate, [string]$AllowedRoot) {
     $rootPath = [IO.Path]::GetFullPath($AllowedRoot).TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
     $candidatePath = [IO.Path]::GetFullPath($Candidate)
@@ -155,47 +166,55 @@ $semanticContracts = @{
     'grilling' = @(
         @{ Label = 'decision graph and frontier'; Patterns = @('(?i)decision graph', '(?i)current frontier') },
         @{ Label = 'discoverable facts stay with the agent'; Patterns = @('(?i)discoverable facts', '(?i)investigate facts directly') },
-        @{ Label = 'no implicit implementation'; Patterns = @('(?i)never authorizes implementation|do not begin implementation') }
+        @{ Label = 'no implicit implementation'; Patterns = @('(?i)never authorizes implementation|do not begin implementation') },
+        @{ Label = 'stalled interview stop'; Patterns = @('(?i)two consecutive rounds add no evidence', '(?i)stop before repeating a question') }
     )
     'codebase-design' = @(
         @{ Label = 'caller-visible contract first'; Patterns = @('(?i)caller-visible', '(?i)before proposing types or abstractions') },
         @{ Label = 'honest seams'; Patterns = @('(?i)seams? only where variation is real') },
         @{ Label = 'conditional deepening and security references'; Patterns = @('references/deepening\.md', 'references/security-design\.md') },
-        @{ Label = 'ranked recommendation'; Patterns = @('(?i)recommend one design') }
+        @{ Label = 'ranked recommendation'; Patterns = @('(?i)recommend one design') },
+        @{ Label = 'incompatible constraint stop'; Patterns = @('(?i)authoritative constraints are mutually incompatible', '(?i)stop short of inventing a contract') }
     )
     'tdd' = @(
         @{ Label = 'stable public seam'; Patterns = @('(?i)public seam', '(?i)real caller') },
         @{ Label = 'red green refactor cycle'; Patterns = @('(?i)\*\*Red\*\*', '(?i)\*\*Green\*\*', '(?i)\*\*Refactor\*\*') },
-        @{ Label = 'intended red evidence'; Patterns = @('(?i)intended red', '(?i)do not claim TDD') }
+        @{ Label = 'intended red evidence'; Patterns = @('(?i)intended red', '(?i)do not claim TDD') },
+        @{ Label = 'unexpected pass and flake handling'; Patterns = @('(?i)passes before production changes', '(?i)neither valid red nor valid green evidence') }
     )
     'refactoring-safely' = @(
         @{ Label = 'observable behavior preservation'; Patterns = @('(?i)preserve observable behavior', '(?i)what must remain unchanged') },
         @{ Label = 'green baseline'; Patterns = @('(?i)baseline', '(?i)failing baseline is not green') },
         @{ Label = 'reversible verified steps'; Patterns = @('(?i)reversible steps', '(?i)focused proof after every step') },
-        @{ Label = 'pre-existing work protection'; Patterns = @('(?i)pre-existing changes', '(?i)never reset or check out pre-existing work') }
+        @{ Label = 'pre-existing work protection'; Patterns = @('(?i)pre-existing changes', '(?i)never reset or check out pre-existing work') },
+        @{ Label = 'unprovable invariant boundary'; Patterns = @('(?i)no runnable or comparative evidence', '(?i)claim behavior preservation without proof') }
     )
     'evolving-contracts' = @(
         @{ Label = 'compatibility matrix'; Patterns = @('(?i)compatibility matrix', '(?i)mixed-version') },
         @{ Label = 'expand migrate observe contract phases'; Patterns = @('(?i)\*\*Expand readers', '(?i)\*\*Migrate writers', '(?i)\*\*Observe', '(?i)\*\*Contract') },
-        @{ Label = 'resume and recovery evidence'; Patterns = @('(?i)before resuming', '(?i)recovery path') }
+        @{ Label = 'resume and recovery evidence'; Patterns = @('(?i)before resuming', '(?i)recovery path') },
+        @{ Label = 'ambiguous resume stop'; Patterns = @('(?i)cursor is ambiguous', '(?i)do not replay writes') }
     )
     'diagnosing-bugs' = @(
         @{ Label = 'repeatable feedback loop'; Patterns = @('(?i)feedback loop', '(?i)repeatable') },
         @{ Label = 'falsifiable single-variable experiments'; Patterns = @('(?i)ranked hypotheses', '(?i)test one variable at a time') },
         @{ Label = 'original scenario confirmation'; Patterns = @('(?i)original unminimized scenario') },
         @{ Label = 'conditional specialist resources'; Patterns = @('references/performance\.md', 'references/windows-github-credentials\.md', 'scripts/Test-WindowsGitHubAuthContext\.ps1') },
-        @{ Label = 'diagnosis before repair'; Patterns = @('(?i)default to diagnosis, not repair', '(?i)repair is explicitly in scope') }
+        @{ Label = 'diagnosis before repair'; Patterns = @('(?i)default to diagnosis, not repair', '(?i)repair is explicitly in scope') },
+        @{ Label = 'causal and stalled-loop boundary'; Patterns = @('(?i)symptom disappearance is not causal evidence', '(?i)two consecutive experiment rounds add no evidence') }
     )
     'review-code-against-spec' = @(
         @{ Label = 'pinned change set'; Patterns = @('(?i)pinned change set', '(?i)effective endpoints') },
         @{ Label = 'independent Standards and Spec axes'; Patterns = @('(?i)two separate passes', '(?i)### Standards pass', '(?i)### Spec pass') },
-        @{ Label = 'read-only default'; Patterns = @('(?i)do not modify code') }
+        @{ Label = 'read-only default'; Patterns = @('(?i)do not modify code') },
+        @{ Label = 'empty and opaque change handling'; Patterns = @('(?i)effective change set is empty', '(?i)opaque change or green summary as reviewed') }
     )
     'resolving-merge-conflicts' = @(
         @{ Label = 'in-progress conflict trigger'; Patterns = @('(?i)use only when Git reports unresolved') },
         @{ Label = 'intent reconstruction and ambiguity stop'; Patterns = @('(?i)preserve both intents', '(?i)do not stage that path') },
         @{ Label = 'safe staging and abort boundary'; Patterns = @('(?i)stage only resolved conflict paths', '(?i)never run .*--abort') },
-        @{ Label = 'preserve unrelated work'; Patterns = @('(?i)unrelated working-tree changes', '(?i)preserved unrelated changes') }
+        @{ Label = 'preserve unrelated work'; Patterns = @('(?i)unrelated working-tree changes', '(?i)preserved unrelated changes') },
+        @{ Label = 'stale conflict state stop'; Patterns = @('(?i)unmerged-path set changes after analysis', '(?i)never apply a stale resolution plan') }
     )
 }
 
@@ -377,6 +396,8 @@ foreach ($skillName in $expectedSkills) {
             Add-ValidationError "${skillName}: invalid description"
         } elseif ($description -notmatch '(?i)\buse (?:only )?when\b|\buse for\b') {
             Add-ValidationError "${skillName}: description does not state when to use the skill"
+        } elseif (-not (Test-ContractRule $description $descriptionContracts[$skillName].Patterns)) {
+            Add-ValidationError "${skillName}: description boundary missing: $($descriptionContracts[$skillName].Label)"
         }
     }
 

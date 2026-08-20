@@ -19,6 +19,8 @@ Preserve observable behavior while improving internal structure. Treat “no beh
 
 Run the smallest relevant existing checks before editing and record the baseline. A failing baseline is not green; isolate the failure or establish an explicit comparison basis before attributing later results.
 
+If no runnable or comparative evidence can cover a material preservation invariant, narrow the change or report that invariant as unverified. Do not proceed merely from confidence or claim behavior preservation without proof.
+
 Read [references/preservation-evidence.md](references/preservation-evidence.md) when tests are sparse, outputs are large, or the change is mechanical across many callers. Add characterization coverage only for important observable behavior not already protected. Do not freeze accidental internals merely to make the refactor feel safer.
 
 ## Change in reversible steps

@@ -33,7 +33,7 @@ For a reported or evidenced CI failure, pin the workflow revision, run and attem
 4. Reject contradicted hypotheses and update the ranking.
 5. Verify that the leading cause predicts the result, then rerun the original unminimized scenario.
 
-Never log indiscriminately or expose secrets. Obtain approval before changing production observability or applying production load. If two consecutive experiment rounds add no evidence or repeat the same action and error, stop and redesign the loop or request the smallest missing input; exhausting a budget is not a diagnosis.
+A workaround, retry, or symptom disappearance is not causal evidence by itself. Never log indiscriminately or expose secrets. Obtain approval before changing production observability or applying production load. If two consecutive experiment rounds add no evidence or repeat the same action and error, stop and redesign the loop or request the smallest missing input; exhausting a budget is not a diagnosis.
 
 ## Repair, optimize, and report
 

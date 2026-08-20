@@ -34,7 +34,7 @@ When the requested design includes a CI/CD workflow or release path, treat trigg
 - Apply the deletion test: if removing a module only removes indirection, it is shallow; if complexity spreads into callers, it earns its place.
 - Do not add a seam or security control for hypothetical variation or an implausible attack path.
 - Prefer fewer entry points and simpler parameters, but never hide constraints callers must understand.
-- Use `$grilling` only when the remaining blocker is an undiscoverable judgment held by the current user.
+- If authoritative constraints are mutually incompatible, identify the smallest conflict and stop short of inventing a contract. Use `$grilling` only when the remaining blocker is an undiscoverable judgment held by the current user.
 - Use `$evolving-contracts` when old and new public, persisted, or dependency versions must coexist.
 - If the design is settled and implementation is requested, use normal implementation or `$tdd` when test-first work is desired.
 

@@ -17,6 +17,8 @@ Honor a user-supplied base, range, PR, or commit. Otherwise infer only when unam
 
 Capture the effective endpoints, commit context when applicable, changed-file list, and raw patch. Stop clearly if the reference is invalid or the effective change set is empty. Ask before proceeding only when competing bases materially change the review.
 
+When the patch does not expose material content—such as an inaccessible binary, generated artifact, submodule target, or remote check—inspect an authoritative representation when safely available. Otherwise report the missing evidence as a verification gap; do not treat an opaque change or green summary as reviewed.
+
 ## Find governing sources
 
 Find the spec in this order:

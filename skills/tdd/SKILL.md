@@ -19,7 +19,7 @@ Use `$codebase-design` first when the interface itself is unresolved. Do not tes
 
 For one vertical behavior slice at a time:
 
-1. **Red**: write the smallest behavior test and run it. Confirm it fails because the requested behavior is absent or wrong—not because of syntax, configuration, environment, or an unrelated baseline failure.
+1. **Red**: write the smallest behavior test and run it. Confirm it fails because the requested behavior is absent or wrong—not because of syntax, configuration, environment, or an unrelated baseline failure. If it passes before production changes, verify that it exercises the intended seam and requirement; if the behavior already exists, report that result instead of forcing a red state.
 2. **Green**: implement only enough production code to pass the new test. Run the focused test again.
 3. **Refactor**: improve names, duplication, and structure without changing behavior. Keep the relevant tests green after each change.
 
@@ -32,6 +32,8 @@ Do not write the entire test suite first or implement layer by layer. Let each c
 - Prefer real in-process collaborators and realistic local stand-ins.
 - Replace only true external boundaries or nondeterministic sources such as time and randomness.
 - Avoid speculative cases and abstractions beyond the current behavior.
+
+A nondeterministic outcome is neither valid red nor valid green evidence. Stabilize the test or use `$diagnosing-bugs` to investigate the flake before repairing production code.
 
 Read [references/tests.md](references/tests.md) when evaluating a test seam, expectation, or boundary substitute.
 

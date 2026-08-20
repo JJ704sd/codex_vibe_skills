@@ -62,6 +62,13 @@ try {
     [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
     Assert-ValidatorResult 'duplicate frontmatter key' 1 (Invoke-FixtureValidator $duplicateFrontmatter) 'duplicate frontmatter key'
 
+    $missingDescriptionBoundary = New-TestFixture 'missing-description-boundary'
+    $skillPath = Join-Path $missingDescriptionBoundary 'skills\tdd\SKILL.md'
+    $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath
+    $skillText = $skillText -replace '; use \$diagnosing-bugs while the cause or expected behavior remains unknown\.', '.'
+    [IO.File]::WriteAllText($skillPath, $skillText, [Text.UTF8Encoding]::new($false))
+    Assert-ValidatorResult 'missing description boundary' 1 (Invoke-FixtureValidator $missingDescriptionBoundary) 'description boundary missing'
+
     $missingGitCiContract = New-TestFixture 'missing-semantic-contract'
     $skillPath = Join-Path $missingGitCiContract 'skills\tdd\SKILL.md'
     $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath
