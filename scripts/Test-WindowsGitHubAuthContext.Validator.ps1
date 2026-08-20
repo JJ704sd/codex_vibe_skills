@@ -32,25 +32,37 @@ exit /b 2
     $ghCommand = $ghCommand.Replace('__GH_AUTH_EXIT__', $(if ($GhAuthValid) { 'exit /b 0' } else { 'exit /b 1' }))
     $gitCommand = @'
 @echo off
-echo %* | findstr /c:"rev-parse --is-inside-work-tree" >nul
-if not errorlevel 1 (
+:scan
+if "%~1"=="" exit /b 0
+if "%~1"=="rev-parse" goto rev_parse
+if "%~1"=="config" goto config
+if "%~1"=="remote" goto remote
+shift
+goto scan
+
+:rev_parse
+if "%~2"=="--is-inside-work-tree" (
   if "%CODEX_TEST_GIT_VALID%"=="1" (
     echo true
     exit /b 0
   )
   exit /b 128
 )
-echo %* | findstr /c:"config --show-origin --get-all credential.helper" >nul
-if not errorlevel 1 (
+exit /b 2
+
+:config
+if "%~2"=="--show-origin" if "%~3"=="--get-all" if "%~4"=="credential.helper" (
   echo file:test credential-manager
   exit /b 0
 )
-echo %* | findstr /c:"remote get-url origin" >nul
-if not errorlevel 1 (
+exit /b 2
+
+:remote
+if "%~2"=="get-url" if "%~3"=="origin" (
   echo https://example.invalid/repository.git
   exit /b 0
 )
-exit /b 0
+exit /b 2
 '@
     [IO.File]::WriteAllText((Join-Path $BinPath 'gh.cmd'), $ghCommand, [Text.ASCIIEncoding]::new())
     [IO.File]::WriteAllText((Join-Path $BinPath 'git.cmd'), $gitCommand, [Text.ASCIIEncoding]::new())
